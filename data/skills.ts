@@ -1,0 +1,27 @@
+import type { Skill } from "@/types";
+
+export const skills: Skill[] = [
+  { name: "Penetration Testing", level: 95, category: "offensive", description: "Expert-level penetration testing across web, network, and mobile platforms", color: "#ef4444" },
+  { name: "Vulnerability Research", level: 90, category: "offensive", description: "Zero-day discovery and responsible disclosure", color: "#f97316" },
+  { name: "Exploit Development", level: 88, category: "offensive", description: "Custom exploit development for complex vulnerabilities", color: "#eab308" },
+  { name: "Social Engineering", level: 85, category: "offensive", description: "Advanced social engineering and phishing simulations", color: "#84cc16" },
+  { name: "Reverse Engineering", level: 87, category: "offensive", description: "Binary analysis and malware reverse engineering", color: "#22c55e" },
+  { name: "Incident Response", level: 92, category: "defensive", description: "Enterprise incident response and forensics", color: "#06b6d4" },
+  { name: "Threat Hunting", level: 90, category: "defensive", description: "Proactive threat hunting across enterprise networks", color: "#3b82f6" },
+  { name: "Malware Analysis", level: 88, category: "defensive", description: "Static and dynamic malware analysis", color: "#6366f1" },
+  { name: "Security Architecture", level: 85, category: "defensive", description: "Enterprise security architecture design", color: "#8b5cf6" },
+  { name: "Cloud Security", level: 90, category: "cloud", description: "AWS, Azure, GCP security architecture", color: "#a855f7" },
+  { name: "Kubernetes Security", level: 85, category: "cloud", description: "Container and K8s security hardening", color: "#d946ef" },
+  { name: "DevSecOps", level: 88, category: "cloud", description: "CI/CD security integration and automation", color: "#ec4899" },
+  { name: "Digital Forensics", level: 85, category: "forensics", description: "Disk, memory, and network forensics", color: "#f43f5e" },
+  { name: "Memory Forensics", level: 82, category: "forensics", description: "Volatile memory analysis and extraction", color: "#e11d48" },
+  { name: "Network Forensics", level: 84, category: "forensics", description: "Network traffic analysis and reconstruction", color: "#be123c" },
+  { name: "Python", level: 95, category: "programming", description: "Advanced Python for security tooling", color: "#2563eb" },
+  { name: "Rust", level: 85, category: "programming", description: "Systems programming with Rust", color: "#7c3aed" },
+  { name: "Go", level: 82, category: "programming", description: "Backend and tooling with Go", color: "#0891b2" },
+  { name: "TypeScript", level: 88, category: "programming", description: "Full-stack TypeScript development", color: "#3178c6" },
+  { name: "C/C++", level: 80, category: "programming", description: "Low-level systems programming", color: "#0284c7" },
+  { name: "Machine Learning", level: 85, category: "ai", description: "ML for security detection and analysis", color: "#06b6d4" },
+  { name: "NLP", level: 80, category: "ai", description: "Natural language processing for threat intel", color: "#0ea5e9" },
+  { name: "Computer Vision", level: 78, category: "ai", description: "CV for phishing detection and analysis", color: "#2563eb" },
+];
