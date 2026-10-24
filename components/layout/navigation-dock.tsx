@@ -6,102 +6,46 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
-import { useThemeStore } from "@/stores/theme-store";
 import { useKeyboardShortcuts } from "@/lib/keyboard";
 import {
   IconHome,
-  IconCode,
-  IconBrain,
-  IconCertificate,
-  IconDashboard,
-  IconFileText,
-  IconNews,
-  IconMail,
-  IconSearch,
   IconTerminal2,
+  IconCode,
+  IconDashboard,
   IconRobot,
-  IconUserShield,
-  IconSettings,
-  IconBell,
-  IconPalette,
-  IconMoon,
-  IconEyeOff,
-  IconGauge,
-  IconDotsVertical,
-  IconGlobe,
-  IconMessage,
   IconBrandGithub,
-  IconChartBar,
-  IconHistory,
-  IconFlag,
-  IconServer,
-  IconNetwork,
-  IconTrophy,
-  IconBooks,
-  IconStar,
-  IconCpu,
-  IconShieldCheck,
   IconLayoutGrid,
-  IconShieldExclamation,
-  IconUsers,
-  IconUserSearch,
-  IconDeviceGamepad2,
+  IconSettings,
+  IconSearch,
+  IconUserShield,
 } from "@tabler/icons-react";
 
 interface DockItem {
   label: string;
-  href: string;
+  href?: string;
   icon: typeof IconHome;
   desc: string;
   shortcut?: string;
-  badge?: string;
+  modal?: boolean;
 }
 
-const primaryItems: DockItem[] = [
-  { label: "Home", href: "/", icon: IconHome, desc: "Return to command center" },
+const CORE_ITEMS: DockItem[] = [
+  { label: "Home", href: "/", icon: IconHome, desc: "Command center", shortcut: "⌃H" },
+  { label: "Terminal", href: "/terminal", icon: IconTerminal2, desc: "Command line interface", shortcut: "⌘T" },
   { label: "Projects", href: "/projects", icon: IconCode, desc: "Security tools & write-ups", shortcut: "P" },
-  { label: "Skills", href: "/skills", icon: IconBrain, desc: "Technical expertise", shortcut: "S" },
-  { label: "Certs", href: "/certifications", icon: IconCertificate, desc: "Industry credentials" },
-  { label: "Dashboard", href: "/dashboard", icon: IconDashboard, desc: "Live SOC metrics" },
-  { label: "Command Center", href: "/command-center", icon: IconShieldExclamation, desc: "SOC + NOC + OSINT fusion", shortcut: "G C" },
-  { label: "Threat Map", href: "/attack-map", icon: IconGlobe, desc: "Global attack visualization" },
-  { label: "Resume", href: "/resume", icon: IconFileText, desc: "Experience & education", shortcut: "R" },
-  { label: "Blog", href: "/blog", icon: IconNews, desc: "Security research", shortcut: "B" },
-  { label: "AI Twin", href: "/cyber-persona", icon: IconMessage, desc: "AI digital twin" },
-  { label: "Interview", href: "/interview-simulator", icon: IconBrain, desc: "AI interview practice" },
-  { label: "GitHub", href: "/github-intelligence", icon: IconBrandGithub, desc: "GitHub analytics" },
-  { label: "Analytics", href: "/career-analytics", icon: IconChartBar, desc: "Career analytics" },
-  { label: "Timeline", href: "/career-timeline", icon: IconHistory, desc: "Learning journey" },
-  { label: "CTF Range", href: "/ctf-command-center", icon: IconFlag, desc: "CTF & cyber range" },
-  { label: "Cyber Lab", href: "/cyber-lab", icon: IconServer, desc: "Lab infrastructure" },
-  { label: "Knowledge", href: "/knowledge-graph", icon: IconNetwork, desc: "Knowledge graph" },
-  { label: "Wiki", href: "/wiki", icon: IconBooks, desc: "Learning encyclopedia" },
-  { label: "Achievements", href: "/achievements", icon: IconTrophy, desc: "Badges & missions" },
-  { label: "Competency", href: "/competency-matrix", icon: IconStar, desc: "Skill progression engine" },
-  { label: "Career Intel", href: "/career-intelligence", icon: IconChartBar, desc: "Role intelligence & skill gaps" },
-  { label: "Architect", href: "/project-architect", icon: IconCpu, desc: "AI project generator & architect" },
-  { label: "Arch. Studio", href: "/security-architect", icon: IconShieldCheck, desc: "Architecture & threat modeling" },
-  { label: "Engineering", href: "/engineering", icon: IconCode, desc: "Platform engineering & quality" },
-  { label: "Collaboration", href: "/collaboration", icon: IconUsers, desc: "OSS ecosystem & community" },
-  { label: "Recruiter", href: "/recruiter", icon: IconUserSearch, desc: "Recruiter experience platform" },
-  { label: "Arcade", href: "/arcade", icon: IconDeviceGamepad2, desc: "Logic, puzzle, cyber & mini games" },
-  { label: "Cyber OS", href: "/cyber-os", icon: IconLayoutGrid, desc: "Desktop OS environment" },
-  { label: "Contact", href: "/contact", icon: IconMail, desc: "Get in touch" },
+  { label: "Dashboard", href: "/dashboard", icon: IconDashboard, desc: "Live SOC metrics", shortcut: "D" },
+  { label: "AI Assistant", icon: IconRobot, desc: "Ask about my work", shortcut: "⌘A", modal: true },
+  { label: "GitHub", href: "/github-intelligence", icon: IconBrandGithub, desc: "GitHub analytics", shortcut: "G" },
+  { label: "Launchpad", icon: IconLayoutGrid, desc: "All applications", shortcut: "⌃L", modal: true },
+  { label: "Settings", href: "/settings", icon: IconSettings, desc: "Preferences", shortcut: "S" },
 ];
 
-const themes = [
-  { id: "dark", label: "Liquid Glass", icon: IconMoon, desc: "Default dark theme" },
-  { id: "cyber", label: "SOC Blue", icon: IconGauge, desc: "Blue-tinted SOC mode" },
-  { id: "matrix", label: "Matrix", icon: IconEyeOff, desc: "Legacy green terminal" },
-] as const;
-
-const notifications = [
-  { id: "n1", title: "New Project", desc: "Threat Hunter v2 published", time: "2h ago", read: false },
-  { id: "n2", title: "Certification", desc: "OSCP verified", time: "1d ago", read: false },
-  { id: "n3", title: "Blog Updated", desc: "Zero-Day Analysis live", time: "3d ago", read: true },
-];
-
-function useDockKeyboard(focusIndex: number, setFocusIndex: (i: number) => void, total: number, onActivate: () => void) {
+function useDockKeyboard(
+  focusIndex: number,
+  setFocusIndex: (i: number) => void,
+  total: number,
+  onActivate: () => void,
+) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "ArrowRight") {
@@ -124,134 +68,26 @@ function useDockKeyboard(focusIndex: number, setFocusIndex: (i: number) => void,
 
 function DockTooltip({ label, desc, shortcut }: { label: string; desc?: string; shortcut?: string }) {
   return (
-    <div className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 px-2.5 py-1.5 rounded-lg whitespace-nowrap z-50
-      bg-gradient-to-br from-[rgba(16,17,20,0.92)] to-[rgba(21,22,26,0.75)]
-      backdrop-blur-2xl border border-[rgba(255,255,255,0.06)]
-      shadow-[0_4px_16px_rgba(0,0,0,0.4)]"
+    <motion.div
+      initial={{ opacity: 0, y: 8, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 6, scale: 0.95 }}
+      transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+      className="pointer-events-none absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-xl whitespace-nowrap z-50
+        bg-gradient-to-br from-[rgba(16,17,20,0.95)] to-[rgba(21,22,26,0.8)]
+        backdrop-blur-2xl border border-[rgba(255,255,255,0.08)]
+        shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
     >
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-[var(--color-foreground)]">{label}</span>
         {shortcut && (
-          <kbd className="px-1 py-0.5 text-xs font-mono rounded bg-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)] border border-[rgba(255,255,255,0.04)]">
+          <kbd className="px-1.5 py-0.5 text-[10px] font-mono rounded-md bg-[rgba(255,255,255,0.07)] text-[var(--color-foreground-tertiary)] border border-[rgba(255,255,255,0.05)]">
             {shortcut}
           </kbd>
         )}
       </div>
-      {desc && <div className="text-xs text-[var(--color-foreground-tertiary)] mt-0.5">{desc}</div>}
-    </div>
-  );
-}
-
-function ThemeDropdown({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const theme = useThemeStore();
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open, onClose]);
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0, y: 8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.96 }}
-          transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 min-w-[160px] p-1.5 rounded-xl z-50
-            bg-gradient-to-br from-[rgba(16,17,20,0.92)] to-[rgba(21,22,26,0.75)]
-            backdrop-blur-2xl border border-[rgba(255,255,255,0.06)]
-            shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
-        >
-          {themes.map((t) => {
-            const Icon = t.icon;
-            const active = theme.mode === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => { theme.setMode(t.id as "dark" | "cyber" | "matrix"); onClose(); }}
-                className={cn(
-                  "flex items-center gap-2.5 w-full px-2.5 py-2 rounded-lg text-left transition-all duration-200",
-                  active
-                    ? "bg-[rgba(0,180,216,0.1)] text-[var(--color-accent)]"
-                    : "text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)]",
-                )}
-              >
-                <Icon size={14} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium">{t.label}</div>
-                  <div className="text-xs text-[var(--color-foreground-tertiary)]">{t.desc}</div>
-                </div>
-                {active && (
-                  <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />
-                )}
-              </button>
-            );
-          })}
-        </motion.div>
-      )}
-    </AnimatePresence>
-  );
-}
-
-function NotificationPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    if (open) document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open, onClose]);
-
-  return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          ref={ref}
-          initial={{ opacity: 0, y: 8, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 8, scale: 0.96 }}
-          transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 min-w-[220px] p-1.5 rounded-xl z-50
-            bg-gradient-to-br from-[rgba(16,17,20,0.92)] to-[rgba(21,22,26,0.75)]
-            backdrop-blur-2xl border border-[rgba(255,255,255,0.06)]
-            shadow-[0_8px_32px_rgba(0,0,0,0.5)]"
-        >
-          <div className="text-xs font-mono text-[var(--color-foreground-tertiary)] tracking-wider uppercase px-2 py-1.5">
-            Notifications
-          </div>
-          {notifications.length === 0 ? (
-            <div className="px-2 py-4 text-center text-xs text-[var(--color-foreground-tertiary)]">All clear</div>
-          ) : (
-            notifications.map((n) => (
-              <div
-                key={n.id}
-                className={cn(
-                  "flex items-start gap-2 px-2.5 py-2 rounded-lg transition-colors",
-                  !n.read && "bg-[rgba(0,180,216,0.04)]",
-                )}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs text-[var(--color-foreground)]">{n.title}</span>
-                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)]" />}
-                  </div>
-                  <div className="text-xs text-[var(--color-foreground-tertiary)]">{n.desc}</div>
-                </div>
-                <span className="text-xs text-[var(--color-foreground-tertiary)] whitespace-nowrap">{n.time}</span>
-              </div>
-            ))
-          )}
-        </motion.div>
-      )}
-    </AnimatePresence>
+      {desc && <div className="text-[11px] text-[var(--color-foreground-tertiary)] mt-0.5">{desc}</div>}
+    </motion.div>
   );
 }
 
@@ -260,16 +96,8 @@ export function NavigationDock() {
   const [scrolled, setScrolled] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [focusIndex, setFocusIndex] = useState(-1);
-  const [themeOpen, setThemeOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
   const dockRef = useRef<HTMLDivElement>(null);
   const ui = useUIStore();
-
-  const homeItem = primaryItems[0];
-  const navItems = primaryItems.slice(1);
-  const mid = Math.ceil(navItems.length / 2);
-  const leftItems = navItems.slice(0, mid);
-  const rightItems = navItems.slice(mid);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -285,16 +113,26 @@ export function NavigationDock() {
     { key: "r", ctrl: true, shift: true, handler: () => ui.toggleRecruiterMode(), description: "Toggle recruiter mode" },
   ]);
 
-  const allDockItems = [homeItem, ...navItems];
-  const handleDockActivate = useCallback(() => {
-    if (focusIndex >= 0 && focusIndex < allDockItems.length) {
-      window.location.href = allDockItems[focusIndex].href;
+  const handleItemClick = (item: DockItem) => {
+    if (item.modal && item.label === "AI Assistant") {
+      ui.setAiAssistantOpen(true);
+    } else if (item.modal && item.label === "Launchpad") {
+      ui.setLaunchpadOpen(true);
+    } else if (item.href) {
+      window.location.href = item.href;
     }
-  }, [focusIndex, allDockItems]);
+  };
 
-  useDockKeyboard(focusIndex, setFocusIndex, allDockItems.length, handleDockActivate);
+  const handleActivate = useCallback(() => {
+    if (focusIndex >= 0 && focusIndex < CORE_ITEMS.length) {
+      handleItemClick(CORE_ITEMS[focusIndex]);
+    }
+  }, [focusIndex]);
 
-  const isActive = (href: string) => {
+  useDockKeyboard(focusIndex, setFocusIndex, CORE_ITEMS.length, handleActivate);
+
+  const isActive = (href?: string) => {
+    if (!href) return false;
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
@@ -302,335 +140,163 @@ export function NavigationDock() {
   const getDockScale = (index: number) => {
     if (hoveredIndex === null) return 1;
     const diff = Math.abs(index - hoveredIndex);
-    if (diff === 0) return 1.35;
-    if (diff === 1) return 1.12;
+    if (diff === 0) return 1.4;
+    if (diff === 1) return 1.15;
     return 1;
   };
 
   return (
     <>
+      {/* Desktop Dock */}
       <motion.nav
         ref={dockRef}
         role="navigation"
         aria-label="Main navigation"
-        initial={{ y: 100, opacity: 0 }}
+        initial={{ y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 120, damping: 20, delay: 0.2 }}
+        transition={{ type: "spring", stiffness: 140, damping: 22, delay: 0.2 }}
         className={cn(
-          "fixed bottom-5 left-1/2 -translate-x-1/2 z-50",
-          "hidden md:flex items-end gap-1 px-3 py-2",
-          "rounded-[var(--radius-glass-xl)]",
-          "bg-gradient-to-br from-[rgba(16,17,20,0.75)] to-[rgba(21,22,26,0.55)]",
-          "backdrop-blur-2xl saturate-[1.2]",
+          "fixed bottom-6 left-1/2 -translate-x-1/2 z-50",
+          "hidden md:flex items-center gap-3 px-5 py-2.5",
+          "rounded-[20px]",
+          "bg-gradient-to-br from-[rgba(16,17,20,0.7)] to-[rgba(21,22,26,0.5)]",
+          "backdrop-blur-2xl saturate-[1.3]",
           "border border-[rgba(255,255,255,0.06)]",
-          "shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.04)]",
-          scrolled && "shadow-[0_12px_48px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.06)] bg-gradient-to-br from-[rgba(16,17,20,0.85)] to-[rgba(21,22,26,0.65)]",
+          "shadow-[0_8px_40px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.05)]",
+          scrolled && "shadow-[0_12px_56px_rgba(0,0,0,0.6)]",
         )}
         style={{ transformOrigin: "bottom center" }}
       >
+        {/* Glass reflection */}
         <div className="pointer-events-none absolute inset-0 rounded-[inherit] overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(255,255,255,0.02)] via-transparent to-transparent opacity-50" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[rgba(255,255,255,0.03)] via-transparent to-transparent opacity-60" />
         </div>
 
-        {[leftItems, homeItem, rightItems].map((group, gi) => {
-          if (gi === 1) {
-            const item = group as DockItem;
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            const isHovered = hoveredIndex === 0;
+        {/* Utility: Search */}
+        <button
+          onClick={() => ui.setSearchOpen(true)}
+          onMouseEnter={() => setHoveredIndex(98)}
+          onMouseLeave={() => setHoveredIndex(null)}
+          className="relative flex items-center justify-center w-11 h-11 rounded-xl text-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.6)] hover:bg-[rgba(255,255,255,0.05)] transition-all outline-none"
+          aria-label="Search — Ctrl+/"
+        >
+          <IconSearch size={18} />
+          <AnimatePresence>
+            {hoveredIndex === 98 && <DockTooltip label="Search" shortcut="Ctrl+/" />}
+          </AnimatePresence>
+        </button>
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="relative flex flex-col items-center gap-0.5 group outline-none"
-                onMouseEnter={() => { setHoveredIndex(0); setFocusIndex(-1); }}
-                onMouseLeave={() => setHoveredIndex(null)}
-                onFocus={() => setFocusIndex(0)}
-                onBlur={() => setFocusIndex(-1)}
-                aria-label={`${item.label} — ${item.desc}`}
-                tabIndex={0}
-              >
+        <div className="w-px h-8 bg-[rgba(255,255,255,0.06)]" />
+
+        {/* Core navigation items */}
+        {CORE_ITEMS.map((item, i) => {
+          const Icon = item.icon;
+          const active = isActive(item.href);
+          const focused = focusIndex === i;
+          const isHovered = hoveredIndex === i;
+
+          const content = (
+            <motion.div
+              className={cn(
+                "relative flex items-center justify-center w-12 h-12 rounded-2xl transition-colors duration-300 cursor-pointer outline-none",
+                active
+                  ? "text-[var(--color-accent)]"
+                  : "text-[rgba(255,255,255,0.35)]",
+                (isHovered || focused) && !active && "text-[rgba(255,255,255,0.7)]",
+                focused && "ring-2 ring-[var(--color-accent)] ring-offset-2 ring-offset-transparent",
+              )}
+              animate={{
+                scale: getDockScale(i),
+                y: isHovered ? -4 : active ? -1 : 0,
+              }}
+              transition={{ type: "spring", stiffness: 500, damping: 28, mass: 0.8 }}
+              whileTap={{ scale: 0.92 }}
+            >
+              {/* Glow on hover */}
+              {(isHovered || focused) && (
                 <motion.div
-                  className={cn(
-                    "relative flex items-center justify-center w-12 h-12 rounded-2xl transition-colors duration-300",
-                    active
-                      ? "text-[var(--color-accent)] bg-gradient-to-b from-[rgba(0,180,216,0.14)] to-[rgba(139,92,246,0.1)] border border-[rgba(0,180,216,0.25)]"
-                      : "text-[rgba(255,255,255,0.5)] hover:text-[rgba(255,255,255,0.8)] hover:bg-[rgba(255,255,255,0.06)]",
-                  )}
-                  animate={{
-                    scale: getDockScale(0),
-                    y: active ? -2 : isHovered ? -1 : 0,
-                  }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                >
-                  <Icon size={22} />
-                  {active && (
-                    <motion.div
-                      layoutId="dock-active"
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[rgba(0,180,216,0.08)] to-transparent"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                </motion.div>
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[rgba(0,180,216,0.1)] to-transparent"
+                />
+              )}
 
-                <span className={cn(
-                  "text-xs font-mono whitespace-nowrap tracking-wider transition-colors duration-300",
-                  active ? "text-[var(--color-accent)]" : "text-[rgba(255,255,255,0.35)]",
-                )}>
-                  {item.label}
-                </span>
+              <Icon size={22} />
 
-                <AnimatePresence>
-                  {(isHovered || focusIndex === 0) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                      transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <DockTooltip label={item.label} desc={item.desc} shortcut={item.shortcut} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Link>
-            );
-          }
-
-          return (group as DockItem[]).map((item, i) => {
-            const idx = gi === 0 ? i + 1 : mid + i + 1;
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            const focused = focusIndex === idx;
-            const isHovered = hoveredIndex === idx;
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="relative flex flex-col items-center gap-0.5 group outline-none"
-                onMouseEnter={() => { setHoveredIndex(idx); setFocusIndex(-1); }}
-                onMouseLeave={() => setHoveredIndex(null)}
-                onFocus={() => setFocusIndex(idx)}
-                onBlur={() => setFocusIndex(-1)}
-                aria-label={`${item.label} — ${item.desc}`}
-                tabIndex={0}
-              >
+              {/* Active indicator dot */}
+              {active && (
                 <motion.div
-                  className={cn(
-                    "relative flex items-center justify-center w-12 h-12 rounded-2xl transition-colors duration-300",
-                    active
-                      ? "text-[var(--color-accent)] bg-gradient-to-b from-[rgba(0,180,216,0.12)] to-[rgba(139,92,246,0.08)] border border-[rgba(0,180,216,0.2)]"
-                      : "text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.6)] hover:bg-[rgba(255,255,255,0.04)]",
-                    focused && "ring-2 ring-[var(--color-accent)] ring-offset-2 ring-offset-transparent",
-                  )}
-                  animate={{
-                    scale: getDockScale(idx),
-                    y: active ? -2 : isHovered ? -1 : 0,
-                  }}
-                  transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                  layoutId="dock-active-dot"
+                  className="absolute -bottom-1.5 w-1 h-1 rounded-full bg-[var(--color-accent)]"
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                />
+              )}
+            </motion.div>
+          );
+
+          return (
+            <div
+              key={item.label}
+              className="relative flex flex-col items-center"
+              onMouseEnter={() => { setHoveredIndex(i); setFocusIndex(-1); }}
+              onMouseLeave={() => setHoveredIndex(null)}
+              onFocus={() => setFocusIndex(i)}
+              onBlur={() => setFocusIndex(-1)}
+            >
+              {item.href && !item.modal ? (
+                <Link
+                  href={item.href}
+                  prefetch={true}
+                  aria-label={`${item.label} — ${item.desc}`}
+                  tabIndex={0}
                 >
-                  <Icon size={20} />
-                  {active && (
-                    <motion.div
-                      layoutId="dock-active"
-                      className="absolute inset-0 rounded-2xl bg-gradient-to-b from-[rgba(0,180,216,0.08)] to-transparent"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                </motion.div>
+                  {content}
+                </Link>
+              ) : (
+                <button
+                  onClick={() => handleItemClick(item)}
+                  aria-label={`${item.label} — ${item.desc}`}
+                  tabIndex={0}
+                >
+                  {content}
+                </button>
+              )}
 
-                <span className={cn(
-                  "text-xs font-mono whitespace-nowrap tracking-wider transition-colors duration-300",
-                  active ? "text-[var(--color-accent)]" : "text-[rgba(255,255,255,0.25)]",
-                )}>
-                  {item.label}
-                </span>
-
-                <AnimatePresence>
-                  {(isHovered || focused) && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 6, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 6, scale: 0.95 }}
-                      transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <DockTooltip label={item.label} desc={item.desc} shortcut={item.shortcut} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </Link>
-            );
-          });
+              <AnimatePresence>
+                {(isHovered || focused) && (
+                  <DockTooltip label={item.label} desc={item.desc} shortcut={item.shortcut} />
+                )}
+              </AnimatePresence>
+            </div>
+          );
         })}
 
-        <div className="w-px h-10 mx-1 bg-[rgba(255,255,255,0.06)]" />
+        <div className="w-px h-8 bg-[rgba(255,255,255,0.06)]" />
 
-        <div className="flex items-center gap-1">
-          <DockIconButton
-            icon={IconSearch}
-            label="Search"
-            desc="Search across the portfolio"
-            shortcut="Ctrl+/"
-            onClick={() => ui.setSearchOpen(true)}
-            hoveredIndex={hoveredIndex}
-            setHoveredIndex={setHoveredIndex}
-            index={99}
-          />
-
-          <DockIconButton
-            icon={IconRobot}
-            label="AI Assistant"
-            desc="Ask questions about my work"
-            shortcut="⌘A"
-            onClick={() => ui.setAiAssistantOpen(true)}
-            hoverColor="rgba(139,92,246,0.6)"
-            hoveredIndex={hoveredIndex}
-            setHoveredIndex={setHoveredIndex}
-            index={100}
-          />
-
-          <DockIconButton
-            icon={IconTerminal2}
-            label="Terminal"
-            desc="Interactive command interface"
-            shortcut="⌘T"
-            onClick={() => ui.setHackerTerminalOpen(true)}
-            hoveredIndex={hoveredIndex}
-            setHoveredIndex={setHoveredIndex}
-            index={101}
-          />
-
-          <div className="relative">
-            <DockIconButton
-              icon={IconPalette}
-              label="Theme"
-              desc="Change visual theme"
-              onClick={() => { setThemeOpen(!themeOpen); setNotifOpen(false); }}
-              hoveredIndex={hoveredIndex}
-              setHoveredIndex={setHoveredIndex}
-              index={102}
-            />
-            <ThemeDropdown open={themeOpen} onClose={() => setThemeOpen(false)} />
-          </div>
-
-          <div className="relative">
-            <DockIconButton
-              icon={IconBell}
-              label="Notifications"
-              desc="Recent activity alerts"
-              onClick={() => { setNotifOpen(!notifOpen); setThemeOpen(false); }}
-              hoveredIndex={hoveredIndex}
-              setHoveredIndex={setHoveredIndex}
-              index={103}
-              badge={notifications.filter((n) => !n.read).length.toString()}
-            />
-            <NotificationPanel open={notifOpen} onClose={() => setNotifOpen(false)} />
-          </div>
-
-          <DockIconButton
-            icon={IconUserShield}
-            label="Hire Me"
-            desc="Toggle recruiter-friendly mode"
-            onClick={() => ui.toggleRecruiterMode()}
-            active={ui.recruiterMode}
-            hoveredIndex={hoveredIndex}
-            setHoveredIndex={setHoveredIndex}
-            index={104}
-          />
-
-          <Link
-            href="/settings"
-            className="relative flex flex-col items-center gap-0.5 group"
-            onMouseEnter={() => setHoveredIndex(105)}
-            onMouseLeave={() => setHoveredIndex(null)}
-            aria-label="Settings"
-          >
-            <div className="flex items-center justify-center w-12 h-12 rounded-2xl text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.6)] hover:bg-[rgba(255,255,255,0.04)] transition-colors">
-              <IconSettings size={20} />
-            </div>
-            <span className="text-xs text-[rgba(255,255,255,0.25)] font-mono tracking-wider">Settings</span>
-          </Link>
-        </div>
+        {/* Utility: Theme + Notifications + Hire Me */}
+        <button
+          onClick={() => ui.toggleRecruiterMode()}
+          onMouseEnter={() => setHoveredIndex(99)}
+          onMouseLeave={() => setHoveredIndex(null)}
+          className={cn(
+            "relative flex items-center justify-center w-11 h-11 rounded-xl transition-all outline-none",
+            ui.recruiterMode
+              ? "text-[var(--color-accent)] bg-[rgba(0,180,216,0.08)]"
+              : "text-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.6)] hover:bg-[rgba(255,255,255,0.05)]",
+          )}
+          aria-label="Toggle recruiter mode"
+        >
+          <IconUserShield size={18} />
+          <AnimatePresence>
+            {hoveredIndex === 99 && <DockTooltip label={ui.recruiterMode ? "Hiring Mode" : "Hire Me"} desc="Toggle recruiter-friendly mode" />}
+          </AnimatePresence>
+        </button>
       </motion.nav>
 
+      {/* Mobile Nav */}
       <MobileNav pathname={pathname} />
     </>
-  );
-}
-
-function DockIconButton({
-  icon: Icon,
-  label,
-  desc,
-  shortcut,
-  onClick,
-  active,
-  hoverColor,
-  hoveredIndex,
-  setHoveredIndex,
-  index,
-  badge,
-}: {
-  icon: typeof IconHome;
-  label: string;
-  desc?: string;
-  shortcut?: string;
-  onClick: () => void;
-  active?: boolean;
-  hoverColor?: string;
-  hoveredIndex: number | null;
-  setHoveredIndex: (i: number | null) => void;
-  index: number;
-  badge?: string;
-}) {
-  const isHovered = hoveredIndex === index;
-  return (
-    <div className="relative flex flex-col items-center gap-0.5 group">
-      <motion.button
-        onClick={onClick}
-        onMouseEnter={() => setHoveredIndex(index)}
-        onMouseLeave={() => setHoveredIndex(null)}
-        whileTap={{ scale: 0.92 }}
-        aria-label={`${label}${desc ? ` — ${desc}` : ""}`}
-        className={cn(
-          "flex items-center justify-center w-12 h-12 rounded-2xl transition-colors duration-300 relative",
-          active
-            ? "bg-[rgba(0,180,216,0.08)] border border-[rgba(0,180,216,0.15)] text-[var(--color-accent)]"
-            : "text-[rgba(255,255,255,0.3)] hover:text-[rgba(255,255,255,0.6)] hover:bg-[rgba(255,255,255,0.04)]",
-        )}
-        animate={{
-          scale: hoveredIndex === null ? 1 : isHovered ? 1.35 : Math.abs(index - (hoveredIndex ?? index)) === 1 ? 1.12 : 1,
-        }}
-        transition={{ type: "spring", stiffness: 400, damping: 25 }}
-        style={hoverColor && isHovered ? { color: hoverColor } : undefined}
-      >
-        <Icon size={20} />
-        {badge && (
-          <span className="absolute -top-0.5 -right-0.5 w-4 h-4 flex items-center justify-center rounded-full bg-[var(--color-accent)] text-xs font-mono text-white font-bold">
-            {badge}
-          </span>
-        )}
-      </motion.button>
-      <span className={cn(
-        "text-xs font-mono tracking-wider transition-colors duration-300",
-        active ? "text-[var(--color-accent)]" : "text-[rgba(255,255,255,0.25)]",
-      )}>
-        {label === "Hire Me" ? (active ? "Hiring" : "Hire Me") : label === "Theme" ? "Theme" : label === "Notifications" ? "Alerts" : label}
-      </span>
-      <AnimatePresence>
-        {isHovered && (
-          <motion.div
-            initial={{ opacity: 0, y: 6, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 6, scale: 0.95 }}
-            transition={{ duration: 0.12, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <DockTooltip label={label} desc={desc} shortcut={shortcut} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
   );
 }
 
@@ -649,13 +315,13 @@ function MobileNav({ pathname }: { pathname: string }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const mobileItems = primaryItems.slice(0, 5);
+  const mobileItems = CORE_ITEMS.slice(0, 4);
 
   return (
     <motion.div
-      animate={{ y: visible ? 0 : 100 }}
+      animate={{ y: visible ? 0 : 120 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden safe-area-bottom"
     >
       <div className="flex items-center justify-around px-2 py-2 rounded-t-2xl
         bg-gradient-to-br from-[rgba(16,17,20,0.88)] to-[rgba(21,22,26,0.7)]
@@ -664,116 +330,42 @@ function MobileNav({ pathname }: { pathname: string }) {
       >
         {mobileItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          const active = item.href ? (pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))) : false;
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={item.label}
+              href={item.href || "/"}
               className={cn(
-"flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-xl transition-all duration-200",
-                 active
+                "flex flex-col items-center gap-0.5 px-4 py-2.5 rounded-xl transition-all duration-200 min-w-[56px]",
+                active
                   ? "text-[var(--color-accent)] bg-[rgba(0,180,216,0.06)]"
                   : "text-[rgba(255,255,255,0.3)] active:text-[rgba(255,255,255,0.5)]",
               )}
             >
               <Icon size={20} />
-              <span className="text-xs font-mono tracking-wider">{item.label}</span>
             </Link>
           );
         })}
         <button
-          onClick={() => ui.setMobileMenuOpen(true)}
-          className="flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-xl text-[rgba(255,255,255,0.3)] active:text-[rgba(255,255,255,0.5)]"
-          aria-label="More options"
+          onClick={() => ui.setSearchOpen(true)}
+          className="flex flex-col items-center gap-0.5 px-4 py-2.5 rounded-xl text-[rgba(255,255,255,0.3)] active:text-[rgba(255,255,255,0.5)] min-w-[56px]"
+          aria-label="Search"
         >
-          <IconDotsVertical size={20} />
-          <span className="text-xs font-mono tracking-wider">More</span>
+          <IconSearch size={20} />
+        </button>
+        <button
+          onClick={() => ui.setLaunchpadOpen(true)}
+          className={cn(
+            "flex flex-col items-center gap-0.5 px-4 py-2.5 rounded-xl transition-all min-w-[56px]",
+            ui.launchpadOpen
+              ? "text-[var(--color-accent)] bg-[rgba(0,180,216,0.06)]"
+              : "text-[rgba(255,255,255,0.3)] active:text-[rgba(255,255,255,0.5)]",
+          )}
+          aria-label="Launchpad"
+        >
+          <IconLayoutGrid size={20} />
         </button>
       </div>
-
-      <AnimatePresence>
-        {ui.mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-[rgba(8,9,12,0.95)] backdrop-blur-xl flex flex-col"
-          >
-            <div className="flex-1 flex flex-col items-center justify-center gap-5 px-6">
-              <div className="grid grid-cols-3 gap-4 w-full max-w-xs">
-                {[...primaryItems].map((item) => {
-                  const Icon = item.icon;
-                  const active = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => ui.setMobileMenuOpen(false)}
-                      className={cn(
-                        "flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl transition-all",
-                        active
-                          ? "text-[var(--color-accent)] bg-[rgba(0,180,216,0.08)] border border-[rgba(0,180,216,0.15)]"
-                          : "text-[rgba(255,255,255,0.4)] hover:text-[rgba(255,255,255,0.7)]",
-                      )}
-                    >
-                      <Icon size={22} />
-                      <span className="text-xs font-mono text-center leading-tight">{item.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              <div className="w-full max-w-xs flex gap-2">
-                <button
-                  onClick={() => { ui.setMobileMenuOpen(false); ui.setSearchOpen(true); }}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-mono bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)] transition-colors"
-                >
-                  <IconSearch size={14} />
-                  Search
-                </button>
-                <button
-                  onClick={() => { ui.setMobileMenuOpen(false); ui.setHackerTerminalOpen(true); }}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-mono bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)] transition-colors"
-                >
-                  <IconTerminal2 size={14} />
-                  Terminal
-                </button>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => { ui.toggleRecruiterMode(); ui.setMobileMenuOpen(false); }}
-                  className={cn(
-                    "flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-mono transition-colors",
-                    ui.recruiterMode
-                      ? "bg-[rgba(0,180,216,0.1)] border border-[rgba(0,180,216,0.2)] text-[var(--color-accent)]"
-                      : "bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-secondary)]",
-                  )}
-                >
-                  <IconUserShield size={14} />
-                  {ui.recruiterMode ? "Recruiter Mode On" : "Recruiter Mode"}
-                </button>
-                <Link
-                  href="/settings"
-                  onClick={() => ui.setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 py-2 px-4 rounded-xl text-xs font-mono bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)] transition-colors"
-                >
-                  <IconSettings size={14} />
-                  Settings
-                </Link>
-              </div>
-            </div>
-
-            <button
-              onClick={() => ui.setMobileMenuOpen(false)}
-              className="py-4 text-xs text-[rgba(255,255,255,0.25)] hover:text-[rgba(255,255,255,0.5)] transition-colors text-center"
-            >
-              Close
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }

@@ -41,6 +41,7 @@ function TopCommandBar() {
   const alerts = useDashboardStore((s) => s.alerts);
   const criticalAlerts = alerts.filter((a) => a.severity === "critical").length;
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [searchOpen, setSearchOpen] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -49,20 +50,21 @@ function TopCommandBar() {
 
   return (
     <div className="glass-card rounded-none rounded-b-xl border-t-0 sticky top-14 z-20">
-      <div className="flex items-center justify-between px-4 py-2.5">
-        <div className="flex items-center gap-3">
-          <button onClick={toggleSidebar} className="p-2.5 text-foreground-tertiary hover:text-foreground transition-colors">
+        <div className="flex items-center justify-between px-2 md:px-4 py-2.5">
+        <div className="flex items-center gap-1 md:gap-3">
+          <button onClick={toggleSidebar} className="hidden md:flex p-2.5 text-foreground-tertiary hover:text-foreground transition-colors min-h-[44px] min-w-[44px] items-center justify-center">
             {sidebarCollapsed ? <IconMenu2 size={16} /> : <IconX size={16} />}
           </button>
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <IconRadar size={14} className="text-cyan" />
             <span className="text-xs font-mono text-foreground-secondary">Sentinel AI SOC</span>
           </div>
-          <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">● LIVE</span>
-          <span className="text-xs font-mono text-foreground-tertiary">{currentTime.toLocaleTimeString()}</span>
+          <span className="hidden md:inline text-xs font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">● LIVE</span>
+          <span className="hidden md:inline text-xs font-mono text-foreground-tertiary">{currentTime.toLocaleTimeString()}</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 md:gap-3">
+          {/* Desktop search */}
           <div className="hidden sm:flex items-center gap-1.5 bg-white/5 rounded-lg px-2.5 py-1.5 border border-border/40">
             <IconSearch size={12} className="text-foreground-tertiary" />
             <input
@@ -72,22 +74,44 @@ function TopCommandBar() {
               className="w-44 bg-transparent text-xs text-foreground outline-none placeholder:text-foreground-tertiary/50"
             />
           </div>
+          {/* Mobile search toggle */}
+          <div className="flex md:hidden items-center">
+            {searchOpen ? (
+              <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2.5 py-1.5 border border-border/40">
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="w-28 bg-transparent text-xs text-foreground outline-none placeholder:text-foreground-tertiary/50"
+                  autoFocus
+                />
+                <button onClick={() => setSearchOpen(false)} className="text-foreground-tertiary hover:text-foreground min-h-[44px] min-w-[44px] flex items-center justify-center">
+                  <IconX size={14} />
+                </button>
+              </div>
+            ) : (
+              <button onClick={() => setSearchOpen(true)} className="text-foreground-tertiary hover:text-foreground transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center">
+                <IconSearch size={16} />
+              </button>
+            )}
+          </div>
           {criticalAlerts > 0 && (
             <div className="flex items-center gap-1 text-xs text-red-400 bg-red-500/10 px-2 py-1 rounded-lg border border-red-500/20">
               <IconAlertTriangle size={11} />
-              <span>{criticalAlerts} critical</span>
+              <span className="hidden sm:inline">{criticalAlerts} critical</span>
+              <span className="sm:hidden">{criticalAlerts}</span>
             </div>
           )}
           <button
             onClick={toggleRecruiter}
-className={`text-xs font-mono px-2 py-2 rounded-lg border transition-colors ${
+className={`text-xs font-mono px-2 py-2 rounded-lg border transition-colors min-h-[44px] flex items-center ${
                recruiterMode ? "bg-cyan/10 border-cyan/30 text-cyan" : "bg-white/5 border-border/40 text-foreground-tertiary hover:text-foreground"
              }`}
           >
             {recruiterMode ? "Recruiter" : "Expert"}
           </button>
-          <IconUser size={14} className="text-foreground-tertiary" />
-          <IconSettings size={14} className="text-foreground-tertiary" />
+          <IconUser size={14} className="hidden md:block text-foreground-tertiary" />
+          <IconSettings size={14} className="hidden md:block text-foreground-tertiary" />
         </div>
       </div>
     </div>
@@ -136,6 +160,52 @@ function Sidebar() {
         })}
       </div>
     </motion.nav>
+  );
+}
+
+function MobileViewSwitcher() {
+  const activeView = useDashboardStore((s) => s.activeView);
+  const setActiveView = useDashboardStore((s) => s.setActiveView);
+  const alerts = useDashboardStore((s) => s.alerts);
+  const newCount = alerts.filter((a) => a.status === "new").length;
+
+  const views: { id: DashboardView; label: string; icon: keyof typeof iconMap }[] = [
+    { id: "overview", label: "Overview", icon: "radar" },
+    { id: "alerts", label: "Alerts", icon: "bell" },
+    { id: "incidents", label: "Incidents", icon: "shield" },
+    { id: "mitre", label: "MITRE", icon: "grid" },
+    { id: "network", label: "Network", icon: "activity" },
+    { id: "endpoints", label: "Endpoints", icon: "monitor" },
+    { id: "intel", label: "Intel", icon: "brain" },
+    { id: "timeline", label: "Timeline", icon: "clock" },
+  ];
+
+  return (
+    <div className="md:hidden overflow-x-auto border-b border-border/40 bg-black/20">
+      <div className="flex items-center gap-1 px-3 py-2 min-w-max">
+        {views.map((view) => {
+          const Icon = iconMap[view.icon] || IconRadar;
+          const isActive = activeView === view.id;
+          return (
+            <button
+              key={view.id}
+              onClick={() => setActiveView(view.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-mono whitespace-nowrap transition-all duration-200 min-h-[44px] ${
+                isActive
+                  ? "bg-cyan/15 text-cyan border border-cyan/30"
+                  : "text-foreground-tertiary hover:text-foreground hover:bg-white/5 border border-transparent"
+              }`}
+            >
+              <Icon size={14} className="shrink-0" />
+              <span>{view.label}</span>
+              {view.id === "alerts" && newCount > 0 && (
+                <span className="text-xs font-mono bg-red-500/20 text-red-400 px-1 py-0.5 rounded">{newCount}</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -294,6 +364,7 @@ export function DashboardPage() {
     <PageTransition>
       <div className="min-h-screen pt-14">
         <TopCommandBar />
+        <MobileViewSwitcher />
         <div className="flex">
           <Sidebar />
           <DashboardContent />

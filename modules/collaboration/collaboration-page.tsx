@@ -229,7 +229,7 @@ function ProjectsSection() {
             <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input type="text" placeholder="Search projects..." value={search}
               onChange={e => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-500/50" />
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-500/50 touch-action-manipulation" style={{ minHeight: 44 }} />
           </div>
           {roles.map(role => (
             <Button key={role} variant={roleFilter === role ? "primary" : "ghost"} size="sm" onClick={() => setRoleFilter(roleFilter === role ? null : role)}>
@@ -579,8 +579,8 @@ function AIAssistantSection() {
             <div className="flex gap-2">
               <input type="text" placeholder="Ask about projects, contributions, governance..." value={chatInput}
                 onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === "Enter" && handleChat()}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-500/50" />
-              <Button variant="primary" size="md" onClick={handleChat}>Ask</Button>
+                className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white focus:outline-none focus:border-cyan-500/50 touch-action-manipulation" style={{ minHeight: 44 }} />
+              <Button variant="primary" size="md" className="touch-action-manipulation" style={{ minHeight: 44 }} onClick={handleChat}>Ask</Button>
             </div>
           </div>
         </GlassCard>
@@ -640,7 +640,7 @@ export default function CollaborationPage() {
   const { recruiterMode } = useUIStore();
 
   return (
-    <div className={cn("min-h-screen pb-20", recruiterMode && "recruiter-mode")}>
+    <div className={cn("min-h-screen pb-20 overflow-x-hidden", recruiterMode && "recruiter-mode")}>
       <HeroSection stats={CONTRIBUTION_STATS} />
       <DashboardSection stats={CONTRIBUTION_STATS} />
       <ProjectsSection />

@@ -219,18 +219,18 @@ export default function PasswordCracker({ onClose, reducedMotion = false }: Crac
   }, [password, viewState, handleAnalyze]);
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 overflow-x-hidden">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-6">
+          <div className="min-w-0">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs mb-2">
               <IconLock size={12} /> Password Cracker Simulator
             </div>
-            <h1 className="text-xl font-bold">Educational Password Analysis</h1>
-            <p className="text-sm text-muted-foreground">Learn how password strength works — no passwords are stored or transmitted</p>
+            <h1 className="text-lg sm:text-xl font-bold">Educational Password Analysis</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">{'Learn how password strength works \u2014 no passwords are stored or transmitted'}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {onClose && (
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <IconX size={16} />
@@ -261,17 +261,19 @@ export default function PasswordCracker({ onClose, reducedMotion = false }: Crac
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                   <button
                     onClick={() => setShowPassword(!showPassword)}
-                    className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all"
+                    className="p-2 sm:p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
                     aria-label={showPassword ? "Hide password" : "Show password"}
+                    style={{ touchAction: "manipulation" }}
                     tabIndex={-1}
                   >
                     {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
                   </button>
                   <button
                     onClick={() => { setPassword(generateRandomPassword()); setViewState("input"); }}
-                    className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-cyan-400 transition-all"
+                    className="p-2 sm:p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-cyan-400 transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
                     aria-label="Generate random password"
                     title="Generate random password"
+                    style={{ touchAction: "manipulation" }}
                     tabIndex={-1}
                   >
                     <IconRefresh size={16} />
@@ -285,7 +287,7 @@ export default function PasswordCracker({ onClose, reducedMotion = false }: Crac
 
             {password && viewState === "input" && (
               <div className="flex justify-center">
-                <Button variant="primary" size="sm" onClick={handleAnalyze}>
+                <Button variant="primary" size="sm" onClick={handleAnalyze} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                   <IconLock size={14} className="mr-1.5" /> Analyze Strength
                 </Button>
               </div>
@@ -335,8 +337,8 @@ export default function PasswordCracker({ onClose, reducedMotion = false }: Crac
               className="space-y-6"
             >
               {/* Strength Overview */}
-              <GlassCard glow={flags.entropy >= 60 ? "cyan" : flags.entropy >= 36 ? "amber" : "none"} className="p-6">
-                <div className="flex items-start justify-between mb-4">
+              <GlassCard glow={flags.entropy >= 60 ? "cyan" : flags.entropy >= 36 ? "amber" : "none"} className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-4">
                   <div>
                     <h2 className="text-sm font-semibold mb-1">Password Strength</h2>
                     <p className="text-xs font-mono text-muted-foreground">{password.replace(/./g, "•")}</p>
@@ -464,18 +466,18 @@ export default function PasswordCracker({ onClose, reducedMotion = false }: Crac
               </GlassCard>
 
               {/* Actions */}
-              <div className="flex items-center gap-3 justify-center">
-                <Button variant="primary" size="md" onClick={handleReset}>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 justify-center">
+                <Button variant="primary" size="md" onClick={handleReset} className="min-h-[44px] w-full sm:w-auto" style={{ touchAction: "manipulation" }}>
                   <IconRefresh size={14} className="mr-1.5" /> Try Another
                 </Button>
                 <Button variant="glass" size="md" onClick={() => {
                   setPassword(generateRandomPassword());
                   setViewState("input");
                   setTimeout(() => handleAnalyze(), 100);
-                }}>
+                }} className="min-h-[44px] w-full sm:w-auto" style={{ touchAction: "manipulation" }}>
                   <IconBolt size={14} className="mr-1.5" /> Test Random
                 </Button>
-                <Button variant="ghost" size="md" onClick={() => setPassword(generatePassphrase())}>
+                <Button variant="ghost" size="md" onClick={() => setPassword(generatePassphrase())} className="min-h-[44px] w-full sm:w-auto" style={{ touchAction: "manipulation" }}>
                   <IconKey size={14} className="mr-1.5" /> Use Passphrase
                 </Button>
               </div>
@@ -492,11 +494,11 @@ export default function PasswordCracker({ onClose, reducedMotion = false }: Crac
               Type a password above to see its entropy, crack time estimates, and personalized improvement tips.
               All analysis happens locally in your browser.
             </p>
-            <div className="flex items-center justify-center gap-3 mt-6">
-              <Button variant="glass" size="sm" onClick={() => { setPassword("password123"); setViewState("input"); }}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
+              <Button variant="glass" size="sm" onClick={() => { setPassword("password123"); setViewState("input"); }} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                 Test &quot;password123&quot;
               </Button>
-              <Button variant="glass" size="sm" onClick={() => { const p = generateRandomPassword(); setPassword(p); setViewState("input"); }}>
+              <Button variant="glass" size="sm" onClick={() => { const p = generateRandomPassword(); setPassword(p); setViewState("input"); }} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                 Generate Random
               </Button>
             </div>
@@ -518,7 +520,7 @@ function GlassBreakEffect({ reducedMotion }: { reducedMotion: boolean }) {
     })), []);
 
   return (
-    <div className="relative w-32 h-32 flex items-center justify-center" role="img" aria-label="Weak password glass break effect">
+    <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center" role="img" aria-label="Weak password glass break effect">
       <motion.div
         initial={reducedMotion ? {} : { scale: 1, opacity: 1 }}
         animate={reducedMotion ? {} : { scale: [1, 1.1, 0], opacity: [1, 0.8, 0] }}
@@ -573,7 +575,7 @@ function GlowingVault({ level, reducedMotion }: { level: "moderate" | "strong" |
     })), []);
 
   return (
-    <div className="relative w-32 h-32 flex items-center justify-center" role="img" aria-label={`${level} password vault effect`}>
+    <div className="relative w-24 h-24 sm:w-32 sm:h-32 flex items-center justify-center" role="img" aria-label={`${level} password vault effect`}>
       {!reducedMotion && (
         <motion.div
           animate={{ opacity: [0.3, 0.6, 0.3], scale: [0.95, 1.05, 0.95] }}

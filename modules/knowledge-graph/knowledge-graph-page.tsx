@@ -119,7 +119,7 @@ function NodeDetailPanel({ nodeId, onClose }: { nodeId: string; onClose: () => v
         <p className="text-xs text-muted-foreground mb-3">{node.description}</p>
         <div>
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Connections ({connectedEdges.length})</h4>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
             {connectedEdges.slice(0, 10).map((edge) => {
               const otherId = edge.source === nodeId ? edge.target : edge.source;
               const other = getNode(otherId);
@@ -167,22 +167,23 @@ function KnowledgeGraphSection() {
           <div className="relative flex-1 min-w-[200px]">
             <IconSearch size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <input type="text" placeholder="Search nodes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50" />
+              className="w-full pl-9 pr-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 touch-action-manipulation" style={{ minHeight: 44 }} />
           </div>
           <div className="flex flex-wrap gap-1">
             {allTypes.map((type) => (
               <button key={type} onClick={() => toggleType(type)}
                 className={cn(
-                  "flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors",
+                  "flex items-center gap-1 text-xs px-2.5 py-2 rounded-lg border transition-colors touch-action-manipulation",
                   filterTypes.includes(type) ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-400" : "border-white/10 text-muted-foreground hover:text-white"
                 )}
+                style={{ minHeight: 44 }}
               >
                 {TYPE_ICONS[type]}
                 <span className="hidden sm:inline">{labelByType[type]}</span>
               </button>
             ))}
             {filterTypes.length > 0 && (
-              <button onClick={() => setFilterTypes([])} className="text-xs px-2 py-1 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10">
+              <button onClick={() => setFilterTypes([])} className="text-xs px-2.5 py-2 rounded-lg border border-red-500/30 text-red-400 hover:bg-red-500/10 touch-action-manipulation" style={{ minHeight: 44 }}>
                 Clear
               </button>
             )}
@@ -362,14 +363,15 @@ function AIKnowledgeGuide() {
           <div className="flex flex-wrap gap-2 mb-3">
             {suggestions.map((s) => (
               <button key={s} onClick={() => { setQuery(s); handleAsk(s); }}
-                className="text-[11px] px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:border-cyan-500/30 transition-colors"
+                className="text-[11px] px-3 py-2 rounded-full bg-white/5 border border-white/10 text-muted-foreground hover:text-white hover:border-cyan-500/30 transition-colors touch-action-manipulation"
+                style={{ minHeight: 44 }}
               >{s}</button>
             ))}
           </div>
           <div className="flex gap-2">
             <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleAsk(query)}
-              placeholder="Ask about the knowledge graph..." className="flex-1 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50" />
-            <Button variant="primary" size="md" onClick={() => handleAsk(query)} loading={loading}>Ask</Button>
+              placeholder="Ask about the knowledge graph..." className="flex-1 px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-cyan-500/50 touch-action-manipulation" style={{ minHeight: 44 }} />
+            <Button variant="primary" size="md" className="touch-action-manipulation" onClick={() => handleAsk(query)} loading={loading}>Ask</Button>
           </div>
           <AnimatePresence>
             {response && (
@@ -378,7 +380,7 @@ function AIKnowledgeGuide() {
               >
                 <div className="flex items-start gap-2">
                   <IconBrain size={16} className="text-purple-400 mt-0.5 shrink-0" />
-                  <p className="text-sm text-muted-foreground">{response}</p>
+                  <p className="text-sm text-muted-foreground break-words">{response}</p>
                 </div>
               </motion.div>
             )}
@@ -409,7 +411,7 @@ function KnowledgeGraphPage() {
     const techCount = nodes.filter((n) => n.type === "technology" || n.type === "tool").length;
 
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen overflow-x-hidden">
         <section className="py-12 px-4">
           <div className="max-w-4xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs mb-4">
@@ -446,7 +448,7 @@ function KnowledgeGraphPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col gap-1">
         {Object.entries(SECTION_IDS).map(([label, id]) => (
           <button key={id} onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })}

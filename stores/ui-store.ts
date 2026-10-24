@@ -10,6 +10,7 @@ interface UIState {
   recruiterMode: boolean;
   matrixMode: boolean;
   mobileMenuOpen: boolean;
+  launchpadOpen: boolean;
 }
 
 interface UIActions {
@@ -20,6 +21,7 @@ interface UIActions {
   setRecruiterMode: (v: boolean) => void;
   setMatrixMode: (v: boolean) => void;
   setMobileMenuOpen: (v: boolean) => void;
+  setLaunchpadOpen: (v: boolean) => void;
   toggleRecruiterMode: () => void;
   toggleMatrixMode: () => void;
 }
@@ -32,6 +34,7 @@ export const useUIStore = create<UIState & UIActions>((set) => ({
   recruiterMode: false,
   matrixMode: false,
   mobileMenuOpen: false,
+  launchpadOpen: false,
 
   setCommandPaletteOpen: (v) => set({ commandPaletteOpen: v }),
   setSearchOpen: (v) => set({ searchOpen: v }),
@@ -46,6 +49,7 @@ export const useUIStore = create<UIState & UIActions>((set) => ({
     document.documentElement.classList.toggle("matrix-mode", v);
   },
   setMobileMenuOpen: (v) => set({ mobileMenuOpen: v }),
+  setLaunchpadOpen: (v) => set({ launchpadOpen: v }),
   toggleRecruiterMode: () =>
     set((s) => {
       document.documentElement.classList.toggle("recruiter-mode", !s.recruiterMode);

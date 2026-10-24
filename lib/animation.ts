@@ -88,18 +88,18 @@ export const listItem: Variants = {
 };
 
 export const pageEnter: Variants = {
-  hidden: { opacity: 0, filter: "blur(4px)", scale: 0.98 },
+  hidden: { opacity: 0.92, scale: 0.99, filter: "blur(0px)" },
   visible: {
     opacity: 1,
-    filter: "blur(0px)",
     scale: 1,
-    transition: { duration: durations.page, ease: easings.smooth },
+    filter: "blur(0px)",
+    transition: { duration: 0.2, ease: easings.smooth },
   },
   exit: {
-    opacity: 0,
-    filter: "blur(4px)",
-    scale: 0.98,
-    transition: { duration: durations.slow, ease: easings.accelerate },
+    opacity: 0.92,
+    scale: 0.99,
+    filter: "blur(0px)",
+    transition: { duration: 0.15, ease: easings.accelerate },
   },
 };
 

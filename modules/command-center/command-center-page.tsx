@@ -223,7 +223,7 @@ function GlobalMetrics() {
 
 function PanelNav({ active, onSelect }: { active: ActivePanel; onSelect: (p: ActivePanel) => void }) {
   return (
-    <div className="flex flex-wrap gap-1 mb-4 p-1 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)]">
+    <div className="flex flex-nowrap lg:flex-wrap gap-1 mb-4 p-1 rounded-xl bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] overflow-x-auto no-scrollbar">
       {PANELS.map((p) => {
         const Icon = p.icon;
         return (
@@ -232,7 +232,7 @@ function PanelNav({ active, onSelect }: { active: ActivePanel; onSelect: (p: Act
             whileTap={{ scale: 0.95 }}
             onClick={() => onSelect(p.id)}
             className={cn(
-              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono transition-all duration-200",
+              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 min-h-[44px]",
               active === p.id
                 ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] border border-[var(--color-accent)]/20"
                 : "text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)]",
@@ -283,7 +283,7 @@ function SocPanel() {
       />
 
       {/* Severity Distribution */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
         {(Object.entries(severityCounts) as [Severity, number][]).map(([sev, count]) => (
           <GlassCard key={sev} glow="none" variant="small" className="text-center">
             <div className="text-lg font-bold font-mono" style={{ color: SEVERITY_COLORS[sev] }}>{count}</div>
@@ -302,7 +302,7 @@ function SocPanel() {
                 severity: alertFilter.severity.includes(s) ? alertFilter.severity.filter(x => x !== s) : [...alertFilter.severity, s]
               })}
               className={cn(
-                "px-2 py-2 rounded text-xs font-mono border transition-all",
+                "px-2 py-2 rounded text-xs font-mono border transition-all min-h-[44px]",
                 alertFilter.severity.includes(s)
                   ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
                   : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)] hover:border-[rgba(255,255,255,0.1)]"
@@ -320,7 +320,7 @@ function SocPanel() {
                 status: alertFilter.status.includes(st) ? alertFilter.status.filter(x => x !== st) : [...alertFilter.status, st]
               })}
               className={cn(
-                "px-2 py-2 rounded text-xs font-mono border transition-all capitalize",
+                "px-2 py-2 rounded text-xs font-mono border transition-all min-h-[44px] capitalize",
                 alertFilter.status.includes(st)
                   ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
                   : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)] hover:border-[rgba(255,255,255,0.1)]"
@@ -352,7 +352,7 @@ function SocPanel() {
       </div>
 
       {/* Alert List */}
-      <div className="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+      <div className="space-y-2 max-h-[50vh] sm:max-h-[480px] overflow-y-auto pr-1">
         {filteredAlerts.map((alert) => {
           const expanded = store.expandedAlerts.includes(alert.id);
           return (
@@ -494,7 +494,7 @@ function ThreatIntelPanel() {
         {/* CVEs */}
         <GlassCard glow="none" variant="default">
           <SectionHeader icon={IconAlertTriangle} label="Critical CVEs" />
-          <div className="space-y-2 max-h-[320px] overflow-y-auto">
+          <div className="space-y-2 max-h-[40vh] sm:max-h-[320px] overflow-y-auto">
             {CVE_SUMMARIES.map((cve) => (
               <div key={cve.id} className="flex items-start gap-2 p-2 rounded-lg bg-[rgba(255,255,255,0.02)]">
                 <div className="w-1 h-full min-h-[32px] rounded-full flex-shrink-0 mt-0.5" style={{ backgroundColor: SEVERITY_COLORS[cve.severity] }} />
@@ -523,7 +523,7 @@ function ThreatIntelPanel() {
         {/* Threat Actors */}
         <GlassCard glow="none" variant="default">
           <SectionHeader icon={IconUsers} label="Active Threat Actors" />
-          <div className="space-y-2 max-h-[320px] overflow-y-auto">
+          <div className="space-y-2 max-h-[40vh] sm:max-h-[320px] overflow-y-auto">
             {THREAT_ACTOR_SUMMARIES.map((actor) => (
               <div key={actor.id} className="flex items-start gap-2 p-2 rounded-lg bg-[rgba(255,255,255,0.02)]">
                 <IconBug size={14} className="text-red-400 mt-0.5 flex-shrink-0" />
@@ -566,15 +566,15 @@ function OsintPanel() {
       <SectionHeader icon={IconGlobe} label="OSINT Dashboard" badge={`${OSINT_FEEDS.length} sources`} />
 
       <div className="flex flex-wrap gap-1">
-        <button onClick={() => setActiveCat("all")} className={cn("px-2 py-2 rounded text-xs font-mono border transition-all", activeCat === "all" ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)]")}>ALL</button>
+        <button onClick={() => setActiveCat("all")} className={cn("px-2 py-2 rounded text-xs font-mono border transition-all min-h-[44px]", activeCat === "all" ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)]")}>ALL</button>
         {categories.map((cat) => (
-          <button key={cat} onClick={() => setActiveCat(cat)} className={cn("px-2 py-2 rounded text-xs font-mono border transition-all capitalize", activeCat === cat ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)]")}>
+          <button key={cat} onClick={() => setActiveCat(cat)} className={cn("px-2 py-2 rounded text-xs font-mono border transition-all min-h-[44px] capitalize", activeCat === cat ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)]")}>
             {cat}
           </button>
         ))}
       </div>
 
-      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+      <div className="space-y-2 max-h-[50vh] sm:max-h-[400px] overflow-y-auto">
         {filtered.map((feed) => (
           <motion.div
             key={feed.id}
@@ -635,7 +635,7 @@ function InfrastructureMap() {
             key={t}
             onClick={() => store.setInfraFilter(t)}
             className={cn(
-              "px-2 py-2 rounded text-xs font-mono border transition-all capitalize",
+              "px-2 py-2 rounded text-xs font-mono border transition-all min-h-[44px] capitalize",
               search === t
                 ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
                 : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)]"
@@ -648,7 +648,7 @@ function InfrastructureMap() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* SVG Map */}
-        <div className="lg:col-span-2 relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden" style={{ height: 520 }}>
+        <div className="lg:col-span-2 relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden max-h-[50vh] h-[300px] sm:h-[400px] lg:h-[520px]">
           <svg viewBox="0 0 100 135" className="w-full h-full">
             {/* Connections */}
             {INFRASTRUCTURE_CONNECTIONS.map((conn) => {
@@ -733,7 +733,7 @@ function InfrastructureMap() {
         </div>
 
         {/* Node List */}
-        <GlassCard glow="none" variant="default" className="max-h-[520px] overflow-y-auto">
+        <GlassCard glow="none" variant="default" className="max-h-[40vh] sm:max-h-[520px] overflow-y-auto">
           <div className="text-xs font-mono text-[var(--color-foreground-tertiary)] mb-2 uppercase tracking-wider">Node Inventory</div>
           <div className="space-y-1">
             {filtered.map((node) => (
@@ -793,14 +793,14 @@ function AiAnalyst() {
           <button
             key={s.question}
             onClick={() => handleAsk(s.question)}
-            className="px-2 py-2 rounded-lg text-xs font-mono bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-secondary)] hover:bg-[rgba(139,92,246,0.1)] hover:text-purple-400 hover:border-purple-400/20 transition-all"
+            className="px-2 py-2 rounded-lg text-xs font-mono bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-secondary)] hover:bg-[rgba(139,92,246,0.1)] hover:text-purple-400 hover:border-purple-400/20 transition-all min-h-[44px]"
           >
             {s.question}
           </button>
         ))}
       </div>
 
-      <div ref={chatRef} className="h-[320px] overflow-y-auto space-y-3 pr-1">
+      <div ref={chatRef} className="h-[40vh] sm:h-[320px] overflow-y-auto space-y-3 pr-1">
         {messages.map((msg, i) => (
           <motion.div
             key={i}
@@ -815,7 +815,7 @@ function AiAnalyst() {
               {msg.isAi ? <IconBrain size={12} className="text-purple-400" /> : <IconUserShield size={12} className="text-cyan-400" />}
             </div>
             <div className={cn(
-              "max-w-[80%] p-2.5 rounded-xl text-xs leading-relaxed",
+              "max-w-[90%] sm:max-w-[80%] p-2.5 rounded-xl text-xs leading-relaxed",
               msg.isAi
                 ? "bg-[rgba(139,92,246,0.06)] border border-[rgba(139,92,246,0.12)] text-[var(--color-foreground)]"
                 : "bg-[rgba(0,180,216,0.06)] border border-[rgba(0,180,216,0.12)] text-[var(--color-foreground)]"
@@ -876,7 +876,7 @@ function IncidentsQueue() {
         className="w-full px-3 py-1.5 rounded-lg bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.06)] text-[11px] font-mono text-[var(--color-foreground)] placeholder:text-[var(--color-foreground-tertiary)] outline-none focus:border-[var(--color-accent)]/30"
       />
 
-      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+      <div className="space-y-2 max-h-[50vh] sm:max-h-[500px] overflow-y-auto">
         {filtered.map((incident) => {
           const expanded = store.expandedIncidents.includes(incident.id);
           return (
@@ -985,7 +985,7 @@ function MissionTimeline() {
             key={cat}
             onClick={() => store.setTimelineFilter(cat)}
             className={cn(
-              "px-2 py-2 rounded text-xs font-mono border transition-all capitalize",
+              "px-2 py-2 rounded text-xs font-mono border transition-all min-h-[44px] capitalize",
               store.timelineFilter === cat
                 ? "border-[var(--color-accent)]/30 bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
                 : "border-[rgba(255,255,255,0.06)] text-[var(--color-foreground-tertiary)]"
@@ -996,7 +996,7 @@ function MissionTimeline() {
         ))}
       </div>
 
-      <div className="relative max-h-[500px] overflow-y-auto">
+      <div className="relative max-h-[50vh] sm:max-h-[500px] overflow-y-auto">
         <div className="absolute left-[11px] top-2 bottom-2 w-px bg-[rgba(255,255,255,0.06)]" />
         <div className="space-y-3">
           {filtered.map((event) => {
@@ -1064,7 +1064,7 @@ function CommandWall() {
 
       {/* Knowledge Graph Visualization */}
       {activeViz === "knowledge" && (
-        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden" style={{ height: 320 }}>
+        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden max-h-[40vh] h-[200px] sm:h-[320px]">
           <svg viewBox="0 0 100 80" className="w-full h-full">
             {/* Generate force-directed-like layout */}
             {[
@@ -1095,7 +1095,7 @@ function CommandWall() {
 
       {/* Infrastructure Visualization */}
       {activeViz === "infrastructure" && (
-        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden" style={{ height: 320 }}>
+        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden max-h-[40vh] h-[200px] sm:h-[320px]">
           <svg viewBox="0 0 100 80" className="w-full h-full">
             {INFRASTRUCTURE_NODES.slice(0, 15).map((node, i) => {
               const angle = (i / 15) * Math.PI * 2;
@@ -1117,7 +1117,7 @@ function CommandWall() {
 
       {/* Career Visualization */}
       {activeViz === "career" && (
-        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden" style={{ height: 320 }}>
+        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden max-h-[40vh] h-[200px] sm:h-[320px]">
           <svg viewBox="0 0 100 80" className="w-full h-full">
             {/* Bar chart */}
             {[
@@ -1146,7 +1146,7 @@ function CommandWall() {
 
       {/* Threat Visualization */}
       {activeViz === "threat" && (
-        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden" style={{ height: 320 }}>
+        <div className="relative rounded-xl border border-[rgba(255,255,255,0.06)] bg-[rgba(8,9,12,0.5)] overflow-hidden max-h-[40vh] h-[200px] sm:h-[320px]">
           <svg viewBox="0 0 100 80" className="w-full h-full">
             {/* Radial threat chart */}
             {[

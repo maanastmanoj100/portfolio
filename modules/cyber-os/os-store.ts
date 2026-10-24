@@ -244,10 +244,13 @@ export const useOsStore = create<OsState>()(
         const count = state.windows.filter((w) => w.appId === appId).length;
         const id = `win-${appId}-${Date.now()}`;
         const offset = (count * 30) % 180;
+        const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
         const win: OsWindow = {
           id, appId, title,
-          x: 80 + offset, y: 60 + offset,
-          width: 800, height: 520,
+          x: isMobile ? 0 : 80 + offset,
+          y: isMobile ? 0 : 60 + offset,
+          width: isMobile ? window.innerWidth : 800,
+          height: isMobile ? window.innerHeight : 520,
           minimized: false, maximized: false,
           zIndex: state.nextZ, route,
         };

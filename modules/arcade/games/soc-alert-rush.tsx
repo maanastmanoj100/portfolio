@@ -199,7 +199,7 @@ export default function SocAlertRush() {
   const accuracyColor = accuracy >= 80 ? "text-green-400" : accuracy >= 50 ? "text-amber-400" : "text-red-400";
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 overflow-x-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -229,7 +229,8 @@ export default function SocAlertRush() {
             <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto mb-8">
               {(["easy", "medium", "hard"] as const).map(d => (
                 <button key={d} onClick={() => startGame(d)}
-                  className={cn("p-4 rounded-xl border bg-white/5 hover:bg-white/10 transition-all text-center capitalize",
+                  style={{ touchAction: "manipulation" }}
+                  className={cn("p-4 rounded-xl border bg-white/5 hover:bg-white/10 transition-all text-center capitalize min-h-[80px]",
                     d === "easy" ? "border-green-500/20 text-green-400" :
                     d === "medium" ? "border-amber-500/20 text-amber-400" : "border-red-500/20 text-red-400")}>
                   <div className="text-lg font-bold">{d}</div>
@@ -249,18 +250,18 @@ export default function SocAlertRush() {
           <>
             {/* HUD */}
             <GlassCard glow="none" className="p-3 mb-4">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 text-[10px] sm:text-xs font-mono">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span>Score: <span className="text-cyan-400 font-bold">{score}</span></span>
                   <span>Combo: <span className="text-orange-400 font-bold">×{combo}</span></span>
                   <span>Alert: <span className="text-purple-400 font-bold">{currentIdx + 1}/{alerts.length}</span></span>
+                  <span className={cn("font-bold", timeLeft <= 5 ? "text-red-400" : "text-muted-foreground")}>
+                    ⏱ {timeLeft}s
+                  </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1">
                     {Array.from({ length: lives }, (_, i) => <span key={i} className="w-2 h-2 rounded-full bg-green-400 inline-block" />)}
-                  </span>
-                  <span className={cn("font-bold", timeLeft <= 5 ? "text-red-400" : "text-muted-foreground")}>
-                    ⏱ {timeLeft}s
                   </span>
                 </div>
               </div>
@@ -287,42 +288,42 @@ export default function SocAlertRush() {
                     }} />
 
                     {/* Alert header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-3">
-                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", SEVERITY_CONFIG[current.severity].bg)}>
-                          {current.severity === "critical" ? <IconSkull size={20} className="text-red-400" /> :
-                           current.severity === "high" ? <IconAlertTriangle size={20} className="text-orange-400" /> :
-                           current.severity === "medium" ? <IconBug size={20} className="text-amber-400" /> :
-                           <IconShield size={20} className="text-slate-400" />}
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-2 mb-4">
+                      <div className="flex items-start gap-2 sm:gap-3 min-w-0">
+                        <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0", SEVERITY_CONFIG[current.severity].bg)}>
+                          {current.severity === "critical" ? <IconSkull size={16} className="text-red-400" /> :
+                           current.severity === "high" ? <IconAlertTriangle size={16} className="text-orange-400" /> :
+                           current.severity === "medium" ? <IconBug size={16} className="text-amber-400" /> :
+                           <IconShield size={16} className="text-slate-400" />}
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-sm font-bold">{current.title}</h2>
-                            <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-mono", SEVERITY_CONFIG[current.severity].color, SEVERITY_CONFIG[current.severity].bg)}>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <h2 className="text-xs sm:text-sm font-bold break-words">{current.title}</h2>
+                            <span className={cn("text-[10px] sm:text-xs px-1.5 py-0.5 rounded-full font-mono", SEVERITY_CONFIG[current.severity].color, SEVERITY_CONFIG[current.severity].bg)}>
                               {current.severity.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">{current.description}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{current.description}</p>
                         </div>
                       </div>
-                      <div className="text-right text-xs text-muted-foreground font-mono whitespace-nowrap">
+                      <div className="text-[10px] sm:text-xs text-muted-foreground font-mono whitespace-nowrap shrink-0">
                         <div>{current.timestamp}</div>
                         <div>{current.source}</div>
                       </div>
                     </div>
 
                     {/* MITRE ATT&CK */}
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-xs font-mono text-purple-400">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4">
+                      <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] sm:text-xs font-mono text-purple-400">
                         <IconFlag size={8} /> {current.techniqueId}
                       </div>
-                      <span className="text-xs text-muted-foreground">{current.techniqueName}</span>
-                      <span className="text-xs text-muted-foreground opacity-40">|</span>
-                      <span className="text-xs text-muted-foreground">{current.tactic}</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">{current.techniqueName}</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground opacity-40 hidden sm:inline">|</span>
+                      <span className="text-[10px] sm:text-xs text-muted-foreground">{current.tactic}</span>
                     </div>
 
                     {/* Action buttons */}
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       {(["investigate", "ignore", "escalate", "close"] as Action[]).map(action => {
                         const icons: Record<Action, typeof IconSearch> = {
                           investigate: IconSearch,
@@ -339,8 +340,9 @@ export default function SocAlertRush() {
                         const I = icons[action];
                         return (
                           <button key={action} onClick={() => handleAction(action)}
-                            className={cn("p-2.5 rounded-xl border text-xs font-mono flex flex-col items-center gap-1 transition-all", colors[action])}>
-                            <I size={14} />
+                            style={{ touchAction: "manipulation" }}
+                            className={cn("p-3 sm:p-2.5 rounded-xl border text-xs font-mono flex flex-col items-center gap-1.5 sm:gap-1 transition-all min-h-[48px]", colors[action])}>
+                            <I size={16} />
                             {CORRECT_ACTION_LABELS[action]}
                           </button>
                         );
@@ -370,21 +372,21 @@ export default function SocAlertRush() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <GlassCard glow={lastResult.correct ? "green" : "none"} className={cn("p-5 border-2", lastResult.correct ? "border-green-500/30" : "border-red-500/30")}>
-                    <div className="flex items-start gap-3">
-                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center shrink-0", lastResult.correct ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400")}>
-                        {lastResult.correct ? <IconCheck size={18} /> : <IconX size={18} />}
+                  <GlassCard glow={lastResult.correct ? "green" : "none"} className={cn("p-4 sm:p-5 border-2", lastResult.correct ? "border-green-500/30" : "border-red-500/30")}>
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className={cn("w-6 h-6 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center shrink-0", lastResult.correct ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400")}>
+                        {lastResult.correct ? <IconCheck size={14} /> : <IconX size={14} />}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className={cn("text-sm font-bold", lastResult.correct ? "text-green-400" : "text-red-400")}>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <span className={cn("text-xs sm:text-sm font-bold", lastResult.correct ? "text-green-400" : "text-red-400")}>
                             {lastResult.correct ? "Correct" : "Incorrect"}
                           </span>
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-[10px] sm:text-xs text-muted-foreground">
                             You chose: {CORRECT_ACTION_LABELS[lastResult.action]}
                           </span>
                           {!lastResult.correct && (
-                            <span className="text-xs text-cyan-400">
+                            <span className="text-[10px] sm:text-xs text-cyan-400">
                               Correct: {CORRECT_ACTION_LABELS[lastResult.alert.correctAction]}
                             </span>
                           )}
@@ -470,11 +472,11 @@ export default function SocAlertRush() {
                 </div>
               </div>
 
-              <div className="flex justify-center gap-3">
-                <Button variant="primary" size="md" onClick={() => startGame(difficulty)}>
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <Button variant="primary" size="md" onClick={() => startGame(difficulty)} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                   <IconRefresh size={14} className="mr-1.5" /> New Shift
                 </Button>
-                <Button variant="glass" size="md" onClick={() => setPhase("menu")}>
+                <Button variant="glass" size="md" onClick={() => setPhase("menu")} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                   Change Difficulty
                 </Button>
               </div>

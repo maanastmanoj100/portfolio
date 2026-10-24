@@ -16,13 +16,13 @@ function MetricCard({ metric, index }: { metric: typeof socMetrics[0]; index: nu
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.1, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
-      <GlassCard className="p-4" glow="cyan" intensity="low">
+      <GlassCard className="p-4 min-h-[80px]" glow="cyan" intensity="low">
         <div className="flex items-start justify-between mb-2">
           <span className="text-xs text-soft-white/40 font-mono">{metric.label}</span>
           <StatusIcon size={14} className={cn(statusColor)} />
         </div>
         <div className="flex items-end gap-2">
-          <span className="text-2xl font-semibold text-soft-white">{metric.value}</span>
+          <span className="text-xl sm:text-2xl font-semibold text-soft-white">{metric.value}</span>
           <span className={cn("text-xs mb-1", statusColor)}>
             {metric.change > 0 ? "+" : ""}{metric.change}%
           </span>
@@ -42,8 +42,8 @@ function MetricCard({ metric, index }: { metric: typeof socMetrics[0]; index: nu
 
 export function SOCDashboard() {
   return (
-    <section className="py-20 relative">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
+    <section className="py-20 relative overflow-x-hidden">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 overflow-x-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}

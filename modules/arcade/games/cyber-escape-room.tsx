@@ -280,7 +280,7 @@ export default function CyberEscapeRoom() {
 
   if (!game.started) {
     return (
-      <div className="min-h-screen pb-12 flex items-center justify-center">
+      <div className="min-h-screen pb-12 flex items-center justify-center overflow-x-hidden">
         <div className="max-w-lg mx-auto px-4 text-center">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/20 mb-6">
@@ -313,7 +313,7 @@ export default function CyberEscapeRoom() {
 
   if (game.escaped) {
     return (
-      <div className="min-h-screen pb-12 flex items-center justify-center">
+      <div className="min-h-screen pb-12 flex items-center justify-center overflow-x-hidden">
         <div className="max-w-lg mx-auto px-4 text-center">
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", duration: 0.8 }}>
             <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border border-amber-500/20 mb-6">
@@ -341,7 +341,7 @@ export default function CyberEscapeRoom() {
   }
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 overflow-x-hidden">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
@@ -353,13 +353,13 @@ export default function CyberEscapeRoom() {
               {game.completedRooms.length}/{ROOMS.length - 1} rooms
             </span>
           </div>
-          <button onClick={resetProgress} className="text-xs text-muted-foreground hover:text-foreground font-mono flex items-center gap-1">
+              <button onClick={resetProgress} className="text-xs text-muted-foreground hover:text-foreground font-mono flex items-center gap-1 min-h-[44px] px-3" style={{ touchAction: "manipulation" }}>
             <IconRefresh size={10} /> Reset
           </button>
         </div>
 
         {/* Room selection */}
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1 scrollbar-thin">
           {ROOMS.filter(r => r.id !== "welcome").map(r => {
             const locked = !game.unlockedRooms.includes(r.id);
             const completed = game.completedRooms.includes(r.id);
@@ -367,7 +367,8 @@ export default function CyberEscapeRoom() {
             return (
               <button key={r.id} onClick={() => !locked && enterRoom(r.id)}
                 disabled={locked || isCurrent || transitioning}
-                className={cn("flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-mono transition-all whitespace-nowrap",
+                style={{ touchAction: "manipulation" }}
+                className={cn("flex items-center gap-1.5 px-3 py-2 sm:px-2.5 sm:py-1.5 rounded-lg border text-xs font-mono transition-all whitespace-nowrap min-h-[44px]",
                   isCurrent ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-400" :
                   completed ? "bg-green-500/10 border-green-500/20 text-green-400" :
                   locked ? "bg-white/[0.02] border-white/5 text-muted-foreground/30 cursor-not-allowed" :
@@ -389,8 +390,8 @@ export default function CyberEscapeRoom() {
                     <IconRobot size={12} className="text-cyan-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs text-muted-foreground">{guideMessage}</p>
-                    <button onClick={advanceGuide} className="text-xs text-cyan-400 font-mono mt-1 hover:underline">
+                    <p className="text-xs sm:text-sm text-muted-foreground">{guideMessage}</p>
+                    <button onClick={advanceGuide} className="text-xs text-cyan-400 font-mono mt-1 hover:underline min-h-[44px] flex items-center" style={{ touchAction: "manipulation" }}>
                       {guideIndex < (GUIDE_MESSAGES[game.currentRoom]?.length || 1) - 1 ? "Next →" : "Got it"}
                     </button>
                   </div>
@@ -406,7 +407,7 @@ export default function CyberEscapeRoom() {
             key={game.currentRoom + game.currentPuzzle}
             {...doorAnimProps("enter")}
             transition={{ duration: 0.35, ease: "easeInOut" }}
-            style={{ perspective: 800 }}
+            style={{ perspective: "min(800px, 80vw)" }}
           >
             {game.currentRoom === "welcome" ? (
               <GlassCard glow="none" className="p-8 text-center">
@@ -414,19 +415,20 @@ export default function CyberEscapeRoom() {
                 <p className="text-sm text-muted-foreground mb-6">
                   Select a room to begin. Each chamber tests a different skill.
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                   {ROOMS.filter(r => r.id !== "welcome" && r.id !== "final").map(r => {
                     const locked = !game.unlockedRooms.includes(r.id);
                     const completed = game.completedRooms.includes(r.id);
                     return (
                       <button key={r.id} onClick={() => !locked && enterRoom(r.id)} disabled={locked}
-                        className={cn("p-4 rounded-xl border text-center transition-all relative overflow-hidden",
+                        style={{ touchAction: "manipulation" }}
+                        className={cn("p-4 rounded-xl border text-center transition-all relative overflow-hidden min-h-[88px]",
                           locked ? "bg-white/[0.02] border-white/5 opacity-40 cursor-not-allowed" :
                           completed ? "bg-green-500/5 border-green-500/20" :
                           "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20")}>
                         {completed && <div className="absolute top-1 right-1"><IconCheck size={10} className="text-green-400" /></div>}
                         <div className={cn("flex justify-center mb-2", r.color)}><r.icon size={24} /></div>
-                        <div className="text-xs font-semibold">{r.title}</div>
+                        <div className="text-xs sm:text-sm font-semibold">{r.title}</div>
                         <div className="text-xs text-muted-foreground mt-0.5">{r.desc}</div>
                       </button>
                     );
@@ -450,7 +452,8 @@ export default function CyberEscapeRoom() {
                     <div className="flex items-center gap-2 text-xs font-mono">
                       <span className="text-muted-foreground">{game.currentPuzzle + 1}/{puzzleData.puzzles.length}</span>
                       <button onClick={useHint} disabled={hintsLeft <= 0}
-                        className={cn("flex items-center gap-1 px-2 py-1 rounded-lg border transition-all",
+                        style={{ touchAction: "manipulation" }}
+                        className={cn("flex items-center gap-1 px-3 py-2 sm:px-2 sm:py-1 rounded-lg border transition-all min-h-[44px]",
                           hintsLeft > 0 ? "bg-amber-500/10 border-amber-500/20 text-amber-400 hover:bg-amber-500/20" :
                           "bg-white/5 border-white/10 text-muted-foreground/30 cursor-not-allowed")}>
                         <IconBulb size={10} /> {hintsLeft}
@@ -460,14 +463,15 @@ export default function CyberEscapeRoom() {
                 </GlassCard>
 
                 {/* Puzzle */}
-                <GlassCard glow="none" className="p-6 mb-3">
-                  <p className="text-sm mb-4">{puzzle.question}</p>
+                <GlassCard glow="none" className="p-4 sm:p-6 mb-3">
+                  <p className="text-xs sm:text-sm mb-4">{puzzle.question}</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {puzzle.options.map((opt, idx) => {
                       return (
                         <button key={idx} onClick={() => !feedback && submitAnswer(idx)}
                           disabled={!!feedback}
-                          className={cn("p-3 rounded-xl border text-sm font-mono text-left transition-all",
+                          style={{ touchAction: "manipulation" }}
+                          className={cn("px-3 py-3 sm:p-3 rounded-xl border text-sm font-mono text-left transition-all min-h-[44px]",
                             feedback && idx === puzzle.correct ? "bg-green-500/10 border-green-500/30 text-green-400" :
                             feedback && selectedIdx === idx && idx !== puzzle.correct ? "bg-red-500/10 border-red-500/30 text-red-400" :
                             "bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20 text-muted-foreground disabled:opacity-50")}>

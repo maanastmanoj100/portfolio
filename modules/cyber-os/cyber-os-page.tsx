@@ -15,7 +15,9 @@ import {
   IconArrowRight, IconCommand, IconAlertTriangle, IconCheck,
   IconGripVertical, IconWifi, IconBattery, IconVolume,
   IconActivity, IconCpu, IconDotsVertical, IconHome,
-  IconSquare, IconSquareX, IconSquareMinus,
+  IconSquare, IconSquareX, IconSquareMinus, IconUser,
+  IconDeviceLaptop, IconShieldLock, IconBinary,
+  IconBulb, IconSwords, IconTarget, IconGraph,
 } from "@tabler/icons-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
@@ -40,8 +42,34 @@ const THEME_BG: Record<string, string> = {
   "high-contrast": "from-black to-black",
 };
 
-const TASKBAR_HEIGHT = 48;
 const DOCK_SIZE = 64;
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia("(max-width: 767px)");
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handler(mql);
+    mql.addEventListener("change", handler);
+    return () => mql.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
+
+// ─── Icon fallback map (for missing Tabler icons) ──────────────────────
+
+const ICON_FALLBACK: Record<string, typeof IconShield> = {
+  IconMemory: IconCpu,
+  IconBrandLinux: IconTerminal,
+  IconSwords: IconShield,
+  IconBulb: IconStar,
+  IconTarget: IconSearch,
+  IconGraph: IconChartBar,
+};
+
+function safeIcon(icon: any): any {
+  return icon;
+}
 
 // ─── Boot Screen ────────────────────────────────────────────────────────
 
@@ -91,7 +119,7 @@ function BootScreen() {
 
 // ─── Window Component ───────────────────────────────────────────────────
 
-function OsWindow({ win }: { win: OsWindow }) {
+function OsWindow({ win, isMobile = false }: { win: OsWindow; isMobile?: boolean }) {
   const { focusWindow, closeWindow, minimizeWindow, maximizeWindow, restoreWindow, moveWindow, resizeWindow } = useOsStore();
   const dragRef = useRef<{ startX: number; startY: number; winX: number; winY: number; dragging: boolean }>({ startX: 0, startY: 0, winX: 0, winY: 0, dragging: false });
   const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number; dir: string }>({ startX: 0, startY: 0, startW: 0, startH: 0, dir: "" });
@@ -149,7 +177,7 @@ function OsWindow({ win }: { win: OsWindow }) {
 
   const isMaximized = win.maximized;
   const displayW = isMaximized ? window.innerWidth : size.w;
-  const displayH = isMaximized ? window.innerHeight - TASKBAR_HEIGHT - DOCK_SIZE - 8 : size.h;
+  const displayH = isMaximized ? window.innerHeight - DOCK_SIZE - 8 : size.h;
   const displayX = isMaximized ? 0 : pos.x;
   const displayY = isMaximized ? 0 : pos.y;
 
@@ -178,29 +206,54 @@ function OsWindow({ win }: { win: OsWindow }) {
   const showApp = app;
   const appColor = showApp?.color || "text-cyan-400";
 
+  if (isMobile) {
+    return (
+      <motion.div
+        className="fixed inset-0 z-50"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        transition={{ duration: 0.15 }}
+      >
+        <div className="h-full flex flex-col bg-gray-950/95 backdrop-blur-2xl border border-white/10">
+          <div className="flex items-center h-12 px-3 bg-white/5 border-b border-white/10">
+            <button onClick={() => closeWindow(win.id)} className="p-2 -ml-1 rounded-lg hover:bg-white/10 transition-colors">
+              <IconChevronLeft size={20} className="text-gray-300" />
+            </button>
+            {showApp && <showApp.icon size={16} className={`${appColor} ml-1 mr-2`} />}
+            <span className="text-sm text-gray-300 font-medium truncate flex-1">{win.title}</span>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <WindowContent />
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+
   return (
     <motion.div
-      className={`fixed rounded-lg overflow-hidden shadow-2xl ${
+      className={`fixed rounded-2xl overflow-hidden shadow-2xl ${
         focused ? "z-50" : "z-40"
       }`}
       style={{ left: displayX, top: displayY, width: displayW, height: displayH }}
-      initial={{ opacity: 0, scale: 0.95 }}
+      initial={{ opacity: 0, scale: 0.92 }}
       animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.15 }}
+      exit={{ opacity: 0, scale: 0.92 }}
+      transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
       onMouseDown={handleMouseDown}
     >
-      <div className={`h-full flex flex-col bg-gray-950/90 backdrop-blur-2xl border ${
+      <div className={`h-full flex flex-col bg-gray-950/85 backdrop-blur-2xl border ${
         focused ? "border-white/20" : "border-white/5"
-      } rounded-lg overflow-hidden`}>
+      } rounded-2xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.5)]`}>
         {/* Title Bar */}
-        <div className="flex items-center h-10 px-3 bg-white/5 border-b border-white/10 cursor-default"
+        <div className="flex items-center h-10 px-3 bg-white/[0.04] border-b border-white/[0.06] cursor-default"
           onMouseDown={startDrag}
         >
           <div className="flex items-center gap-2 mr-3">
-            <button onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }} className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-400 transition-colors" title="Close" />
-            <button onClick={(e) => { e.stopPropagation(); minimizeWindow(win.id); }} className="w-3 h-3 rounded-full bg-amber-500 hover:bg-amber-400 transition-colors" title="Minimize" />
-            <button onClick={(e) => { e.stopPropagation(); isMaximized ? restoreWindow(win.id) : maximizeWindow(win.id); }} className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-400 transition-colors" title={isMaximized ? "Restore" : "Maximize"} />
+            <button onClick={(e) => { e.stopPropagation(); closeWindow(win.id); }} className="w-3 h-3 rounded-full bg-red-500/80 hover:bg-red-400 transition-colors" title="Close" />
+            <button onClick={(e) => { e.stopPropagation(); minimizeWindow(win.id); }} className="w-3 h-3 rounded-full bg-amber-500/80 hover:bg-amber-400 transition-colors" title="Minimize" />
+            <button onClick={(e) => { e.stopPropagation(); isMaximized ? restoreWindow(win.id) : maximizeWindow(win.id); }} className="w-3 h-3 rounded-full bg-green-500/80 hover:bg-green-400 transition-colors" title={isMaximized ? "Restore" : "Maximize"} />
           </div>
           {showApp && <showApp.icon size={14} className={`${appColor} mr-2`} />}
           <span className="text-xs text-gray-300 font-medium truncate flex-1 text-center mr-20">{win.title}</span>
@@ -291,14 +344,16 @@ function TerminalApp() {
         {session?.lines.map((line, i) => (
           <div key={i} className={line.className || "text-gray-300"} style={{ whiteSpace: "pre-wrap" }}>{line.text || "\u00A0"}</div>
         ))}
+        <div ref={bottomRef} />
+      </div>
+      <div className="sticky bottom-0 px-3 py-2 bg-black/60 border-t border-white/5">
         <div className="flex items-center gap-1">
-          <span className="text-green-400">$</span>
+          <span className="text-green-400 font-mono text-xs">$</span>
           <input ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKey}
-            className="flex-1 bg-transparent border-none outline-none text-green-300 caret-green-400 text-xs"
+            className="flex-1 bg-transparent border-none outline-none text-green-300 caret-green-400 text-xs font-mono min-h-[44px]"
             spellCheck={false} autoComplete="off"
           />
         </div>
-        <div ref={bottomRef} />
       </div>
     </div>
   );
@@ -827,239 +882,629 @@ function ControlCenterQuick() {
   );
 }
 
-// ─── Widgets ────────────────────────────────────────────────────────────
+// ─── NEW: Wallpaper ──────────────────────────────────────────────────────
+
+function DesktopWallpaper() {
+  const { theme } = useOsStore();
+  return (
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Cinematic cyber city background - layered gradients */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${THEME_BG[theme] || THEME_BG["liquid-glass"]}`} />
+
+      {/* Mountain/sky gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-transparent via-cyan-950/10 to-blue-950/20" />
+
+      {/* City silhouette - CSS shape */}
+      <div className="absolute bottom-0 left-0 right-0 h-[30%]">
+        <div className="absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage: [
+            "linear-gradient(90deg, rgba(0,180,216,0.3) 1px, transparent 1px)",
+            "linear-gradient(0deg, rgba(0,180,216,0.3) 1px, transparent 1px)",
+          ].join(","),
+          backgroundSize: "20px 20px",
+        }} />
+      </div>
+
+      {/* Grid pattern */}
+      <div className="absolute inset-0 opacity-[0.02]" style={{
+        backgroundImage: "radial-gradient(rgba(0,180,216,0.15) 1px, transparent 1px)",
+        backgroundSize: "40px 40px",
+      }} />
+
+      {/* Ambient glow spots */}
+      <div className="absolute top-1/4 left-1/3 w-96 h-96 rounded-full bg-cyan-500/3 blur-[120px]" />
+      <div className="absolute top-1/3 right-1/4 w-80 h-80 rounded-full bg-purple-500/3 blur-[100px]" />
+      <div className="absolute bottom-1/4 left-1/2 w-64 h-64 rounded-full bg-blue-500/2 blur-[80px]" />
+
+      {/* Floating particles (very subtle) */}
+      {Array.from({ length: 15 }).map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-px h-px rounded-full bg-cyan-400/20"
+          style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
+          animate={{ y: [0, -20 - Math.random() * 20, 0], opacity: [0.1, 0.3, 0.1] }}
+          transition={{ duration: 4 + Math.random() * 4, repeat: Infinity, delay: Math.random() * 3, ease: "easeInOut" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── NEW: Left Sidebar ──────────────────────────────────────────────────
+
+function LeftSidebar() {
+  const { openWindow, appLauncherOpen, setAppLauncherOpen, setCommandPaletteOpen, windows } = useOsStore();
+  const [activeNav, setActiveNav] = useState("home");
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const navItems = [
+    { id: "home", label: "Home", icon: IconHome },
+    { id: "terminal", label: "Terminal", icon: IconTerminal },
+    { id: "projects", label: "Projects", icon: IconCode },
+    { id: "dashboard", label: "SOC Dashboard", icon: IconShield },
+    { id: "ai", label: "AI Assistant", icon: IconRobot },
+    { id: "knowledge", label: "Knowledge Graph", icon: IconNetwork },
+    { id: "certs", label: "Certifications", icon: IconCertificate },
+    { id: "resume", label: "Resume", icon: IconFileText },
+    { id: "blog", label: "Blog", icon: IconBook },
+    { id: "architecture", label: "Architecture Studio", icon: IconLock },
+    { id: "labs", label: "Labs", icon: IconServer },
+    { id: "tools", label: "Tools", icon: IconBug },
+    { id: "arcade", label: "Games Arcade", icon: IconStar },
+    { id: "settings", label: "Settings", icon: IconSettings },
+  ];
+
+  const handleNav = (id: string) => {
+    setActiveNav(id);
+    const map: Record<string, [string, string, string?]> = {
+      home: ["files", "Home", "/"],
+      terminal: ["terminal", "Terminal"],
+      projects: ["projects", "Projects", "/projects"],
+      dashboard: ["soc-dashboard", "SOC Dashboard", "/dashboard"],
+      ai: ["ai-copilot", "AI Copilot"],
+      knowledge: ["knowledge-graph", "Knowledge Graph", "/knowledge-graph"],
+      certs: ["certs", "Certifications", "/certifications"],
+      resume: ["resume", "Resume", "/resume"],
+      blog: ["blog", "Blog", "/blog"],
+      architecture: ["architecture", "Architecture Studio", "/security-architect"],
+      labs: ["labs", "Home Lab", "/cyber-lab"],
+      tools: ["tools", "Tools", "/tools"],
+      arcade: ["arcade", "Games Arcade", "/arcade"],
+      settings: ["settings", "Settings"],
+    };
+    const entry = map[id];
+    if (entry) {
+      openWindow(entry[0], entry[1], entry[2]);
+    }
+  };
+
+  return (
+    <div className="hidden md:flex flex-col fixed left-3 top-16 bottom-24 z-20 w-14">
+      <motion.div
+        className="flex-1 flex flex-col items-center py-3 px-1 gap-1 rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(16,17,20,0.7), rgba(21,22,26,0.5))",
+          backdropFilter: "blur(24px) saturate(1.2)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
+        }}
+      >
+        {/* Logo */}
+        <motion.button
+          onClick={() => setAppLauncherOpen(!appLauncherOpen)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.95 }}
+          className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-purple-500/10 border border-cyan-500/25 flex items-center justify-center mb-2"
+        >
+          <IconShield size={18} className="text-cyan-400" />
+        </motion.button>
+
+        <div className="w-6 h-px bg-white/5 mb-2" />
+
+        {/* Nav Items */}
+        <div className="flex-1 flex flex-col items-center gap-0.5 overflow-y-auto no-scrollbar">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeNav === item.id;
+            const isHovered = hovered === item.id;
+            const isOpen = windows.some((w) => w.appId === item.id);
+            return (
+              <div key={item.id} className="relative">
+                <button
+                  onClick={() => handleNav(item.id)}
+                  onMouseEnter={() => setHovered(item.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 ${
+                    isActive || isOpen
+                      ? "text-cyan-400 bg-cyan-500/10 border border-cyan-500/20"
+                      : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+                  }`}
+                  style={isHovered && !isActive ? { color: "rgba(0,180,216,0.7)" } : undefined}
+                >
+                  <Icon size={18} />
+                </button>
+                {(isHovered || isActive) && (
+                  <motion.div
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="absolute left-12 top-1/2 -translate-y-1/2 px-2.5 py-1.5 rounded-lg whitespace-nowrap z-50 pointer-events-none"
+                    style={{
+                      background: "rgba(16,17,20,0.92)",
+                      backdropFilter: "blur(12px)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                    }}
+                  >
+                    <span className="text-xs font-medium text-gray-200">{item.label}</span>
+                  </motion.div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="w-6 h-px bg-white/5 my-2" />
+
+        {/* Profile */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => handleNav("settings")}
+          className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/10 to-purple-500/5 border border-white/[0.06] flex items-center justify-center overflow-hidden"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-purple-500 flex items-center justify-center">
+            <IconUser size={14} className="text-white" />
+          </div>
+        </motion.button>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── NEW: Top Bar ────────────────────────────────────────────────────────
+
+function CyberTopBar() {
+  const { setCommandPaletteOpen, setGlobalSearchOpen, setNotificationCenterOpen, openWindow, notifications } = useOsStore();
+  const unread = notifications.filter((n) => !n.read).length;
+  const [time, setTime] = useState(new Date());
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  useEffect(() => { const i = setInterval(() => setTime(new Date()), 30000); return () => clearInterval(i); }, []);
+
+  return (
+    <div className="hidden md:flex fixed top-3 left-[calc(50%+1rem)] -translate-x-1/2 z-30" style={{ width: "min(640px, calc(100vw - 6rem))" }}>
+      <div className="w-full flex items-center h-10 px-3 rounded-2xl gap-2"
+        style={{
+          background: "linear-gradient(135deg, rgba(16,17,20,0.7), rgba(21,22,26,0.5))",
+          backdropFilter: "blur(24px) saturate(1.2)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
+        }}
+      >
+        {/* System icon left */}
+        <IconActivity size={14} className="text-emerald-400/80 shrink-0" />
+
+        {/* Centered Search */}
+        <div className="flex-1 flex items-center justify-center">
+          <div
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-200 cursor-pointer ${
+              searchFocused ? "bg-cyan-500/10 border border-cyan-500/30 w-full" : "bg-white/[0.04] border border-white/[0.06] w-48 hover:w-56 hover:bg-white/[0.06]"
+            }`}
+            onClick={() => { setGlobalSearchOpen(true); setSearchFocused(true); }}
+          >
+            <IconSearch size={13} className="text-gray-500 shrink-0" />
+            <span className="text-xs text-gray-500 truncate">Search apps, files, commands...</span>
+            <kbd className="hidden sm:inline-block px-1 py-0.5 text-[10px] font-mono rounded bg-white/[0.06] text-gray-600 border border-white/[0.04] ml-auto">Ctrl+F</kbd>
+          </div>
+        </div>
+
+        {/* Right icons */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={() => openWindow("terminal", "Terminal")}
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:text-green-400 hover:bg-white/5 transition-all"
+            title="Open Terminal"
+          >
+            <IconTerminal size={15} />
+          </button>
+          <button
+            onClick={() => setNotificationCenterOpen(true)}
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:text-cyan-400 hover:bg-white/5 transition-all relative"
+            title="Notifications"
+          >
+            <IconBell size={15} />
+            {unread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-cyan-500 text-[9px] flex items-center justify-center text-white font-bold">
+                {unread}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setCommandPaletteOpen(true)}
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-500 hover:text-purple-400 hover:bg-white/5 transition-all"
+            title="Command Palette"
+          >
+            <IconCommand size={14} />
+          </button>
+          <div className="w-px h-5 bg-white/[0.06] mx-0.5" />
+          <div className="flex items-center gap-1.5 px-1.5">
+            <span className="text-xs text-gray-400 font-mono tabular-nums">{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── NEW: Quick Actions ──────────────────────────────────────────────────
+
+function QuickActions() {
+  const { openWindow } = useOsStore();
+
+  const actions = [
+    { id: "terminal", label: "Open Terminal", icon: IconTerminal, color: "text-green-400", gradient: "from-green-500/10 to-emerald-500/5", border: "border-green-500/20" },
+    { id: "ai-copilot", label: "AI Assistant", icon: IconRobot, color: "text-purple-400", gradient: "from-purple-500/10 to-violet-500/5", border: "border-purple-500/20" },
+    { id: "soc-dashboard", label: "SOC Dashboard", icon: IconShield, color: "text-cyan-400", gradient: "from-cyan-500/10 to-blue-500/5", border: "border-cyan-500/20" },
+    { id: "arcade", label: "Games Arcade", icon: IconStar, color: "text-amber-400", gradient: "from-amber-500/10 to-yellow-500/5", border: "border-amber-500/20" },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {actions.map((action) => {
+        const Icon = action.icon;
+        return (
+          <motion.button
+            key={action.id}
+            onClick={() => openWindow(action.id, action.label, action.id === "soc-dashboard" ? "/dashboard" : action.id === "arcade" ? "/arcade" : undefined)}
+            whileHover={{ scale: 1.03, y: -1 }}
+            whileTap={{ scale: 0.97 }}
+            className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-br ${action.gradient} border ${action.border} hover:bg-white/[0.04] transition-all`}
+            style={{
+              backdropFilter: "blur(8px)",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            <Icon size={16} className={action.color} />
+            <span className="text-xs text-gray-300 font-medium whitespace-nowrap">{action.label}</span>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── NEW: Dashboard Cards ───────────────────────────────────────────────
+
+function DashboardCards() {
+  const { openWindow } = useOsStore();
+
+  const cards = [
+    {
+      title: "Active Projects",
+      value: "8",
+      desc: "Security tools & research",
+      icon: IconCode,
+      color: "text-cyan-400",
+      items: ["Threat Detection Engine", "Home Lab v3", "CTF Platform"],
+      onClick: () => openWindow("projects", "Projects", "/projects"),
+    },
+    {
+      title: "GitHub Activity",
+      value: "45",
+      desc: "Contributions this month",
+      icon: IconBrandGithub,
+      color: "text-purple-400",
+      items: ["12 repos", "340 stars", "8 forks"],
+      onClick: () => openWindow("github", "GitHub", "/github-intelligence"),
+    },
+    {
+      title: "Certifications",
+      value: "5",
+      desc: "Industry credentials",
+      icon: IconCertificate,
+      color: "text-emerald-400",
+      items: ["OSCP", "PNPT", "AWS Security"],
+      onClick: () => openWindow("certs", "Certifications", "/certifications"),
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      {cards.map((card) => {
+        const Icon = card.icon;
+        return (
+          <motion.button
+            key={card.title}
+            onClick={card.onClick}
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            className="text-left p-5 rounded-2xl transition-all"
+            style={{
+              background: "linear-gradient(135deg, rgba(16,17,20,0.65), rgba(21,22,26,0.45))",
+              backdropFilter: "blur(24px) saturate(1.2)",
+              WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+            }}
+          >
+            <div className="flex items-center justify-between mb-3">
+              <Icon size={20} className={card.color} />
+              <span className="text-2xl font-bold text-white tabular-nums">{card.value}</span>
+            </div>
+            <h3 className="text-sm font-medium text-gray-200 mb-1">{card.title}</h3>
+            <p className="text-xs text-gray-500 mb-2">{card.desc}</p>
+            <div className="space-y-0.5">
+              {card.items.map((item) => (
+                <div key={item} className="flex items-center gap-1.5">
+                  <div className="w-1 h-1 rounded-full bg-cyan-400/40" />
+                  <span className="text-xs text-gray-400">{item}</span>
+                </div>
+              ))}
+            </div>
+          </motion.button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── NEW: Right Widget Column ────────────────────────────────────────────
 
 function ClockWidget() {
   const [time, setTime] = useState(new Date());
   useEffect(() => { const i = setInterval(() => setTime(new Date()), 1000); return () => clearInterval(i); }, []);
   return (
-    <GlassCard glow="none" variant="small" className="h-full">
-      <div className="flex flex-col items-center justify-center h-full">
-        <p className="text-2xl font-bold text-white tabular-nums">{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
-        <p className="text-xs text-gray-400">{time.toLocaleDateString([], { weekday: "short", month: "short", day: "numeric" })}</p>
-      </div>
-    </GlassCard>
+    <div className="p-4 rounded-2xl text-center"
+      style={{
+        background: "linear-gradient(135deg, rgba(16,17,20,0.65), rgba(21,22,26,0.45))",
+        backdropFilter: "blur(24px) saturate(1.2)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+      }}
+    >
+      <p className="text-3xl font-bold text-white tabular-nums tracking-tight">{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+      <p className="text-xs text-gray-500 mt-1">{time.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}</p>
+    </div>
   );
 }
 
-function StatsWidget() {
-  const stats = useMemo(() => ({
-    projects: "8",
-    certs: "5",
-    skills: "20+",
-    ctf: "34",
-  }), []);
+function SystemStatusWidget() {
   return (
-    <GlassCard glow="none" variant="small" className="h-full">
-      <div className="p-2 space-y-1">
-        <p className="text-xs text-gray-400 font-medium">Portfolio Stats</p>
-        <div className="grid grid-cols-4 gap-1 text-center">
-          {Object.entries(stats).map(([k, v]) => (
-            <div key={k}>
-              <p className="text-sm font-bold text-cyan-400">{v}</p>
-              <p className="text-xs text-gray-500 uppercase">{k}</p>
-            </div>
-          ))}
-        </div>
+    <div className="p-4 rounded-2xl"
+      style={{
+        background: "linear-gradient(135deg, rgba(16,17,20,0.65), rgba(21,22,26,0.45))",
+        backdropFilter: "blur(24px) saturate(1.2)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <IconShield size={14} className="text-emerald-400" />
+        <span className="text-xs font-medium text-gray-300">System Status</span>
+        <span className="ml-auto flex items-center gap-1 text-xs text-emerald-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          Secure
+        </span>
       </div>
-    </GlassCard>
-  );
-}
-
-function GithubWidget() {
-  const repos = [
-    { name: "cyber-nexus", stars: 12, lang: "TypeScript" },
-    { name: "home-lab-iac", stars: 8, lang: "HCL" },
-    { name: "soc-automation", stars: 5, lang: "Python" },
-  ];
-  return (
-    <GlassCard glow="none" variant="small" className="h-full">
-      <div className="p-2 space-y-1.5">
-        <div className="flex items-center gap-1">
-          <IconBrandGithub size={12} className="text-gray-400" />
-          <p className="text-xs text-gray-400 font-medium">GitHub</p>
-        </div>
-        {repos.map((r) => (
-          <div key={r.name} className="flex items-center justify-between">
-            <span className="text-xs text-gray-300 truncate">{r.name}</span>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">{r.lang}</span>
-              <span className="text-xs text-gray-500">★ {r.stars}</span>
-            </div>
+      <div className="space-y-1.5">
+        {[
+          { label: "Firewall", value: "Active", color: "text-emerald-400" },
+          { label: "VPN", value: "Connected", color: "text-cyan-400" },
+          { label: "Threat Intel", value: "Up to date", color: "text-green-400" },
+          { label: "Network", value: "Operational", color: "text-emerald-400" },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center justify-between text-xs">
+            <span className="text-gray-500">{s.label}</span>
+            <span className={`${s.color}`}>{s.value}</span>
           </div>
         ))}
       </div>
-    </GlassCard>
+    </div>
   );
 }
 
-function PerfWidget() {
-  const perf = useOsStore((s) => s.performanceHistory);
-  const latest = perf[perf.length - 1];
-  useEffect(() => {
-    const i = setInterval(() => useOsStore.getState().recordPerformance(), 3000);
-    return () => clearInterval(i);
-  }, []);
+function RecentActivityWidget() {
+  const { openWindow } = useOsStore();
+  const activities = [
+    { text: "SOC Dashboard updated", time: "2m ago" },
+    { text: "New CVE added to intel", time: "15m ago" },
+    { text: "Knowledge Graph synced", time: "1h ago" },
+    { text: "CTF challenge completed", time: "3h ago" },
+    { text: "Lab VM provisioned", time: "5h ago" },
+  ];
   return (
-    <GlassCard glow="none" variant="small" className="h-full">
-      <div className="p-2 space-y-1">
-        <div className="flex items-center gap-1">
-          <IconCpu size={12} className="text-gray-400" />
-          <p className="text-xs text-gray-400 font-medium">Performance</p>
-        </div>
-        {latest ? (
-          <div className="grid grid-cols-3 gap-1 text-center">
-            <div><p className="text-xs font-bold text-cyan-400">{latest.cpu}%</p><p className="text-xs text-gray-500">CPU</p></div>
-            <div><p className="text-xs font-bold text-purple-400">{latest.mem}%</p><p className="text-xs text-gray-500">MEM</p></div>
-            <div><p className="text-xs font-bold text-green-400">{latest.fps}</p><p className="text-xs text-gray-500">FPS</p></div>
-          </div>
-        ) : (
-          <p className="text-xs text-gray-500">Initializing...</p>
-        )}
-        {perf.length > 1 && (
-          <svg viewBox="0 0 80 20" className="w-full h-4">
-            <polyline fill="none" stroke="rgba(6,182,212,0.5)" strokeWidth="1"
-              points={perf.slice(-20).map((p, i) => `${(i / Math.min(perf.length, 20)) * 80},${20 - (p.cpu / 100) * 18}`).join(" ")}
-            />
-          </svg>
-        )}
+    <div className="p-4 rounded-2xl"
+      style={{
+        background: "linear-gradient(135deg, rgba(16,17,20,0.65), rgba(21,22,26,0.45))",
+        backdropFilter: "blur(24px) saturate(1.2)",
+        WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+        border: "1px solid rgba(255,255,255,0.06)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.3)",
+      }}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <IconActivity size={14} className="text-cyan-400" />
+        <span className="text-xs font-medium text-gray-300">Recent Activity</span>
       </div>
-    </GlassCard>
+      <div className="space-y-1.5">
+        {activities.map((a, i) => (
+          <div key={i} className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-1 h-1 rounded-full bg-cyan-400/40 shrink-0" />
+              <span className="text-xs text-gray-400 truncate">{a.text}</span>
+            </div>
+            <span className="text-[10px] text-gray-600 shrink-0">{a.time}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
-// ─── Dock ───────────────────────────────────────────────────────────────
+// ─── NEW: Welcome Hero ────────────────────────────────────────────────────
 
-function Dock() {
-  const { openWindow, dockApps, pinnedApps, toggleDockApp } = useOsStore();
-  const windows = useOsStore((s) => s.windows);
-  const [hovered, setHovered] = useState<string | null>(null);
-  const [showMenu, setShowMenu] = useState<string | null>(null);
-
-  const allDockApps = OS_APPS.filter((a) => dockApps.includes(a.id) || pinnedApps.includes(a.id));
+function WelcomeHero() {
+  const { openWindow } = useOsStore();
+  const [greeting, setGreeting] = useState("Welcome to");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Good Morning");
+    else if (hour < 17) setGreeting("Good Afternoon");
+    else setGreeting("Good Evening");
+  }, []);
 
   return (
-    <div className="fixed bottom-2 left-1/2 -translate-x-1/2 z-30">
-      <div className="flex items-end gap-1 px-2 py-1.5 rounded-2xl bg-gray-950/80 backdrop-blur-2xl border border-white/10 shadow-2xl">
-        {allDockApps.map((app) => {
+    <div className="mb-6">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <p className="text-sm text-cyan-400/80 font-mono tracking-wider mb-1">{greeting}</p>
+        <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2">
+          <span className="bg-gradient-to-r from-cyan-400 via-white to-purple-400 bg-clip-text text-transparent">
+            Cyber Nexus
+          </span>
+        </h1>
+        <p className="text-sm text-gray-400 max-w-lg">
+          Security operations platform &mdash; interactive portfolio, threat intelligence, labs, and tools.
+        </p>
+      </motion.div>
+    </div>
+  );
+}
+
+// ─── NEW: Dock ────────────────────────────────────────────────────────────
+
+function CyberDock() {
+  const { openWindow, dockApps, windows } = useOsStore();
+  const [hovered, setHovered] = useState<string | null>(null);
+
+  const dockItems = OS_APPS.filter((a) => dockApps.includes(a.id));
+
+  return (
+    <div className="hidden md:flex fixed bottom-3 left-1/2 -translate-x-1/2 z-30">
+      <motion.div
+        className="flex items-end gap-1 px-3 py-2 rounded-2xl"
+        style={{
+          background: "linear-gradient(135deg, rgba(16,17,20,0.7), rgba(21,22,26,0.5))",
+          backdropFilter: "blur(24px) saturate(1.2)",
+          WebkitBackdropFilter: "blur(24px) saturate(1.2)",
+          border: "1px solid rgba(255,255,255,0.06)",
+          boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)",
+        }}
+      >
+        {dockItems.map((app) => {
           const isOpen = windows.some((w) => w.appId === app.id && !w.minimized);
           const isMinimized = windows.some((w) => w.appId === app.id && w.minimized);
+          const isHovered = hovered === app.id;
+          const scale = isHovered ? 1.25 : 1;
+
           return (
-            <div key={app.id} className="relative">
-              <button onClick={() => openWindow(app.id, app.name, app.route)}
-                onMouseEnter={() => setHovered(app.id)} onMouseLeave={() => { setHovered(null); setShowMenu(null); }}
-                className={`relative p-2 rounded-xl transition-all duration-150 ${
-                  hovered === app.id ? "bg-white/10 scale-110" : "bg-transparent"
-                }`}
+            <div key={app.id} className="relative flex flex-col items-center">
+              <motion.button
+                onClick={() => openWindow(app.id, app.name, app.route)}
+                onMouseEnter={() => setHovered(app.id)}
+                onMouseLeave={() => setHovered(null)}
+                animate={{ scale, y: isHovered ? -4 : 0 }}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                className="relative w-12 h-12 rounded-2xl flex items-center justify-center transition-colors"
+                style={{
+                  background: isHovered ? "rgba(255,255,255,0.06)" : "transparent",
+                }}
               >
-                <app.icon size={24} className={app.color} />
+                <app.icon size={22} className={app.color} />
                 {(isOpen || isMinimized) && (
-                  <span className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${isMinimized ? "bg-gray-600" : "bg-cyan-400"}`} />
+                  <motion.span
+                    layoutId={`dock-dot-${app.id}`}
+                    className={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
+                      isMinimized ? "bg-gray-600" : "bg-cyan-400"
+                    }`}
+                  />
                 )}
-              </button>
-              {hovered === app.id && (
-                <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded bg-gray-900 border border-white/10 whitespace-nowrap">
-                  <p className="text-xs text-white">{app.name}</p>
-                </div>
-              )}
+              </motion.button>
+
+              {/* Tooltip */}
+              <AnimatePresence>
+                {isHovered && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 4, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 4, scale: 0.95 }}
+                    className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 rounded-lg whitespace-nowrap z-50 pointer-events-none"
+                    style={{
+                      background: "rgba(16,17,20,0.92)",
+                      backdropFilter: "blur(12px)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                    }}
+                  >
+                    <span className="text-[11px] font-medium text-gray-200">{app.name}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           );
         })}
-      </div>
+      </motion.div>
     </div>
   );
 }
 
-// ─── Taskbar ────────────────────────────────────────────────────────────
+// ─── OS Lite Mobile ─────────────────────────────────────────────────────
 
-function Taskbar() {
-  const { setAppLauncherOpen, setCommandPaletteOpen, setGlobalSearchOpen, setNotificationCenterOpen, setControlCenterOpen, windows, focusedWindow, focusWindow, minimizeWindow, restoreWindow, notifications } = useOsStore();
-  const unread = notifications.filter((n) => !n.read).length;
-  const [time, setTime] = useState(new Date());
-  useEffect(() => { const i = setInterval(() => setTime(new Date()), 30000); return () => clearInterval(i); }, []);
-
-  return (
-    <div className="fixed top-0 left-0 right-0 h-10 z-30 bg-gray-950/80 backdrop-blur-2xl border-b border-white/10 flex items-center px-3 gap-1">
-      <button onClick={() => setAppLauncherOpen(true)} className="p-2.5 rounded-lg hover:bg-white/10 transition-colors">
-        <IconShield size={18} className="text-cyan-400" />
-      </button>
-      <button onClick={() => setCommandPaletteOpen(true)} title="Command Palette (Ctrl+K)" className="p-2.5 rounded-lg hover:bg-white/10 transition-colors hidden sm:block">
-        <IconCommand size={16} className="text-gray-400" />
-      </button>
-
-      <div className="flex-1 flex items-center gap-0.5 px-2 overflow-hidden">
-        {windows.filter((w) => !w.minimized).slice(0, 8).map((w) => {
-          const app = OS_APPS.find((a) => a.id === w.appId);
-          const isFocused = focusedWindow === w.id;
-          return (
-            <button key={w.id} onClick={() => isFocused ? minimizeWindow(w.id) : focusWindow(w.id)}
-              className={`flex items-center gap-1.5 px-2 py-2 rounded text-xs transition-colors max-w-[140px] ${
-                isFocused ? "bg-white/15 text-white" : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
-              }`}
-            >
-              {app && <app.icon size={12} className={app.color} />}
-              <span className="truncate">{w.title}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="flex items-center gap-1">
-        <button onClick={() => setGlobalSearchOpen(true)} title="Search (Ctrl+F)" className="p-2.5 rounded-lg hover:bg-white/10 transition-colors">
-          <IconSearch size={14} className="text-gray-400" />
-        </button>
-        <button onClick={() => setNotificationCenterOpen(true)} className="p-2.5 rounded-lg hover:bg-white/10 transition-colors relative">
-          <IconBell size={14} className="text-gray-400" />
-          {unread > 0 && <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-cyan-500 text-xs flex items-center justify-center text-white font-bold">{unread}</span>}
-        </button>
-        <button onClick={() => setControlCenterOpen(true)} className="p-2.5 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-1.5">
-          <IconWifi size={12} className="text-green-400" />
-          <span className="text-xs text-gray-300 tabular-nums">{time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ─── Desktop Icons ──────────────────────────────────────────────────────
-
-function DesktopIcons() {
+function OsLiteMobile() {
   const { openWindow } = useOsStore();
-  const desktopApps = [
-    { id: "soc-dashboard", name: "SOC Dashboard", icon: IconShield, color: "text-cyan-400" },
-    { id: "knowledge-graph", name: "Knowledge Graph", icon: IconNetwork, color: "text-purple-400" },
-    { id: "terminal", name: "Terminal", icon: IconTerminal, color: "text-green-400" },
-    { id: "files", name: "Files", icon: IconFolder, color: "text-cyan-400" },
-    { id: "settings", name: "Settings", icon: IconSettings, color: "text-gray-400" },
-    { id: "wiki", name: "Wiki", icon: IconBook, color: "text-blue-400" },
-  ];
-  return (
-    <div className="absolute left-4 top-14 flex flex-col gap-1">
-      {desktopApps.map((app) => (
-        <button key={app.id} onDoubleClick={() => openWindow(app.id, app.name)}
-          className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/10 transition-colors w-48"
-        >
-          <app.icon size={20} className={app.color} />
-          <span className="text-xs text-gray-300 truncate">{app.name}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
+  const [selectedCat, setSelectedCat] = useState("all");
 
-// ─── Workspace Switcher ─────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    if (selectedCat === "all") return OS_APPS;
+    return OS_APPS.filter((a) => a.category === selectedCat);
+  }, [selectedCat]);
 
-function WorkspaceSwitcher() {
-  const { workspaces, activeWorkspace, switchWorkspace } = useOsStore();
   return (
-    <div className="absolute top-14 right-4 flex gap-1">
-      {workspaces.map((ws) => (
-        <button key={ws.id} onClick={() => switchWorkspace(ws.id)}
-          className={`px-2 py-2 rounded text-xs border transition-colors ${
-            activeWorkspace === ws.id ? "bg-cyan-500/20 border-cyan-500/30 text-cyan-300" : "border-white/10 text-gray-500 hover:text-gray-300 hover:border-white/30"
-          }`}
-        >{ws.name}</button>
-      ))}
+    <div className="h-full flex flex-col bg-transparent">
+      <div className="flex items-center px-4 py-3 border-b border-white/10 bg-gray-950/80 backdrop-blur-xl">
+        <IconShield size={20} className="text-cyan-400 mr-2" />
+        <h1 className="text-white font-semibold">Cyber Nexus OS</h1>
+      </div>
+
+      <div className="flex gap-1.5 px-4 py-2 overflow-x-auto border-b border-white/5">
+        {[{ id: "all", name: "All" }, ...APP_CATEGORIES].map((c) => (
+          <button key={c.id} onClick={() => setSelectedCat(c.id)}
+            className={`px-3 py-1 rounded-full text-xs whitespace-nowrap transition-colors ${
+              selectedCat === c.id
+                ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30"
+                : "text-gray-400 border border-white/10 hover:border-white/30"
+            }`}
+          >{c.name}</button>
+        ))}
+      </div>
+
+      <div className="flex-1 overflow-auto p-3">
+        {filtered.length === 0 ? (
+          <div className="flex items-center justify-center h-40 text-gray-500 text-sm">
+            No apps found in this category
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {filtered.map((app) => (
+              <motion.button key={app.id} onClick={() => openWindow(app.id, app.name, app.route)}
+                whileTap={{ scale: 0.96 }}
+                className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 backdrop-blur-lg border border-white/[0.08] hover:bg-white/[0.1] active:bg-white/[0.12] transition-all text-left"
+              >
+                <app.icon size={28} className={app.color} />
+                <span className="text-sm text-gray-200 font-medium">{app.name}</span>
+                <span className="text-xs text-gray-500 text-center leading-tight">{app.desc}</span>
+              </motion.button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1068,7 +1513,7 @@ function WorkspaceSwitcher() {
 
 export default function CyberOsPage() {
   const { showBoot, booted, desktopReady, windows, commandPaletteOpen, globalSearchOpen, notificationCenterOpen, controlCenterOpen, appLauncherOpen, theme } = useOsStore();
-  const themeGradient = THEME_BG[theme] || THEME_BG["liquid-glass"];
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -1104,56 +1549,66 @@ export default function CyberOsPage() {
 
   return (
     <div className="fixed inset-0 overflow-hidden">
-      {/* Wallpaper */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${themeGradient}`} />
+      {/* Wallpaper — always behind everything */}
+      <DesktopWallpaper />
 
-      {/* Desktop Grid Pattern */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
-        backgroundImage: "radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)",
-        backgroundSize: "32px 32px",
-      }} />
+      {/* Glass backdrop overlay for readability */}
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/40 pointer-events-none z-[1]" />
 
-      {/* Particles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {Array.from({ length: 20 }).map((_, i) => (
-          <motion.div key={i} className="absolute w-1 h-1 rounded-full bg-cyan-500/20"
-            style={{ left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
-            animate={{ y: [0, -30, 0], opacity: [0.2, 0.5, 0.2] }}
-            transition={{ duration: 3 + Math.random() * 4, repeat: Infinity, delay: Math.random() * 3 }}
-          />
-        ))}
+      {/* ─── Mobile OS Lite ─── */}
+      <div className="block md:hidden fixed inset-0 z-10">
+        <OsLiteMobile />
       </div>
 
-      {/* Taskbar */}
-      <Taskbar />
+      {/* ─── Desktop Full OS ─── */}
+      <div className="hidden md:block fixed inset-0 z-10">
+        {/* Left Sidebar */}
+        <LeftSidebar />
 
-      {/* Desktop Icons */}
-      <DesktopIcons />
+        {/* Top Bar */}
+        <CyberTopBar />
 
-      {/* Workspace Switcher */}
-      <WorkspaceSwitcher />
+        {/* Main Content Area */}
+        <div className="absolute left-20 right-72 top-0 bottom-24 overflow-y-auto overflow-x-hidden no-scrollbar">
+          <div className="pt-20 pb-8 pr-4 pl-2">
+            {/* Welcome Hero */}
+            <WelcomeHero />
 
-      {/* Widgets */}
-      <div className="absolute right-4" style={{ top: 100 }}>
-        <div className="flex flex-col gap-2">
-          <div style={{ width: 220, height: 90 }}><ClockWidget /></div>
-          <div style={{ width: 220, height: 70 }}><StatsWidget /></div>
-          <div style={{ width: 220, height: 100 }}><GithubWidget /></div>
-          <div style={{ width: 220, height: 80 }}><PerfWidget /></div>
+            {/* Quick Actions */}
+            <div className="mb-6">
+              <QuickActions />
+            </div>
+
+            {/* Dashboard Cards */}
+            <div className="mb-6">
+              <DashboardCards />
+            </div>
+          </div>
+        </div>
+
+        {/* Right Widget Column */}
+        <div className="absolute right-4 top-4 bottom-24 w-60 z-10 overflow-y-auto no-scrollbar">
+          <div className="flex flex-col gap-3 pt-20">
+            <ClockWidget />
+            <SystemStatusWidget />
+            <RecentActivityWidget />
+          </div>
+        </div>
+
+        {/* Dock */}
+        <CyberDock />
+      </div>
+
+      {/* Windows — rendered on top of everything */}
+      <div className="absolute inset-0 z-20 pointer-events-none">
+        <div className="pointer-events-auto h-full">
+          <AnimatePresence>
+            {windows.map((win) => (
+              <OsWindow key={win.id} win={win} isMobile={isMobile} />
+            ))}
+          </AnimatePresence>
         </div>
       </div>
-
-      {/* Windows */}
-      <div className="absolute inset-0 pt-10" style={{ bottom: DOCK_SIZE + 8 }}>
-        <AnimatePresence>
-          {windows.map((win) => (
-            <OsWindow key={win.id} win={win} />
-          ))}
-        </AnimatePresence>
-      </div>
-
-      {/* Dock */}
-      <Dock />
 
       {/* Overlays */}
       <AnimatePresence>

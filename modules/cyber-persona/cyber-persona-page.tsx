@@ -385,7 +385,7 @@ export function CyberPersonaPage() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen pt-20 pb-20">
+      <div className="min-h-screen pt-20 pb-20 overflow-x-hidden">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mb-8">
             <span className="text-xs text-purple font-mono tracking-wider uppercase">.cyber-persona</span>
@@ -423,7 +423,7 @@ export function CyberPersonaPage() {
                     {recruiterMode && <span className="flex items-center gap-0.5 px-1.5 py-0.5 text-xs bg-cyan/10 text-cyan rounded font-mono"><IconUserShield size={8} />Recruiter</span>}
                     <span className="px-1.5 py-0.5 text-xs bg-green-500/10 text-green-500 rounded font-mono">Online</span>
                   </div>
-                  <button onClick={() => { setMessages([{ role: "assistant", content: "Hello. I'm **Cyber Persona**, the AI-powered digital twin representing the knowledge within this portfolio. I can explain projects, discuss skills, summarize certifications, explore cybersecurity topics, and guide you through my learning journey. What would you like to know?" }]); engineRef.current = createConversationEngine(); }} className="flex items-center gap-1 px-2 py-1 text-xs font-mono rounded-lg bg-white/5 text-foreground-tertiary hover:text-foreground hover:bg-white/10 transition-colors border border-white/10">
+                  <button onClick={() => { setMessages([{ role: "assistant", content: "Hello. I'm **Cyber Persona**, the AI-powered digital twin representing the knowledge within this portfolio. I can explain projects, discuss skills, summarize certifications, explore cybersecurity topics, and guide you through my learning journey. What would you like to know?" }]); engineRef.current = createConversationEngine(); }} className="flex items-center gap-1 px-2.5 py-2 text-xs font-mono rounded-lg bg-white/5 text-foreground-tertiary hover:text-foreground hover:bg-white/10 transition-colors border border-white/10 touch-action-manipulation" style={{ minHeight: 44 }}>
                     <IconRefresh size={8} /> New Chat
                   </button>
                 </div>
@@ -431,8 +431,8 @@ export function CyberPersonaPage() {
                 <div className="flex-1 overflow-y-auto space-y-3 mb-3 px-0.5" style={{ maxHeight: "380px", minHeight: "300px" }}>
                   {messages.map((msg, i) => (
                     <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
-                      <div className={cn("max-w-[90%] p-2.5 rounded-xl text-[11px] leading-relaxed", msg.role === "user" ? "bg-cyan/10 border border-cyan/20 text-cyan" : "bg-white/5 border border-white/10 text-foreground/80")}>
-                        <div dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground'>$1</strong>").replace(/\n/g, "<br />") }} />
+                      <div className={cn("max-w-[85%] sm:max-w-[90%] p-2.5 rounded-xl text-[11px] leading-relaxed break-words", msg.role === "user" ? "bg-cyan/10 border border-cyan/20 text-cyan" : "bg-white/5 border border-white/10 text-foreground/80")}>
+                        <div className="break-words" dangerouslySetInnerHTML={{ __html: msg.content.replace(/\*\*(.*?)\*\*/g, "<strong class='text-foreground'>$1</strong>").replace(/\n/g, "<br />") }} />
                         {msg.sources && msg.sources.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5 pt-1.5 border-t border-white/5">
                             {msg.sources.map((s) => (
@@ -462,7 +462,7 @@ export function CyberPersonaPage() {
                 <div className="space-y-2 pt-3 border-t border-white/5">
                   <div className="flex flex-wrap gap-1">
                     {!hasStarted && activeSuggestions.map((s) => (
-                      <button key={s} onClick={() => handleSuggestionClick(s)} className="text-xs px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-foreground-tertiary hover:text-foreground border border-white/10 transition-colors font-mono">
+                      <button key={s} onClick={() => handleSuggestionClick(s)} className="text-xs px-2.5 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-foreground-tertiary hover:text-foreground border border-white/10 transition-colors font-mono touch-action-manipulation" style={{ minHeight: 44 }}>
                         {s}
                       </button>
                     ))}
@@ -470,17 +470,17 @@ export function CyberPersonaPage() {
                       <div className="flex flex-wrap gap-1 w-full">
                         <span className="text-xs font-mono text-foreground-tertiary w-full mb-0.5">Suggested:</span>
                         {activeSuggestions.slice(0, 3).map((s) => (
-                          <button key={s} onClick={() => handleSuggestionClick(s)} className="text-xs px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 text-foreground-tertiary hover:text-foreground border border-white/10 transition-colors font-mono">
+                          <button key={s} onClick={() => handleSuggestionClick(s)} className="text-xs px-2.5 py-2 rounded bg-white/5 hover:bg-white/10 text-foreground-tertiary hover:text-foreground border border-white/10 transition-colors font-mono touch-action-manipulation" style={{ minHeight: 44 }}>
                             {s}
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-2">
-                    <input id="cyber-persona-input" type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder="Ask Cyber Persona anything..." className="flex-1 px-3 py-2 text-[11px] bg-white/5 border border-white/10 rounded-xl text-foreground outline-none placeholder:text-foreground-tertiary/30 focus:border-cyan/30 transition-colors" />
-                    <button onClick={handleSend} disabled={!input.trim() || isTyping} className="p-2 rounded-xl bg-cyan/10 border border-cyan/20 text-cyan hover:bg-cyan/20 transition-colors disabled:opacity-30 shrink-0">
-                      <IconSend size={14} />
+                  <div className="flex gap-2 w-full">
+                    <input id="cyber-persona-input" type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleSend()} placeholder="Ask Cyber Persona anything..." className="flex-1 min-w-0 px-3 py-2.5 text-xs sm:text-[11px] bg-white/5 border border-white/10 rounded-xl text-foreground outline-none placeholder:text-foreground-tertiary/30 focus:border-cyan/30 transition-colors touch-action-manipulation" style={{ minHeight: 44 }} />
+                    <button onClick={handleSend} disabled={!input.trim() || isTyping} className="p-3 rounded-xl bg-cyan/10 border border-cyan/20 text-cyan hover:bg-cyan/20 transition-colors disabled:opacity-30 shrink-0 touch-action-manipulation" style={{ minWidth: 44, minHeight: 44 }}>
+                      <IconSend size={16} />
                     </button>
                   </div>
                 </div>

@@ -500,26 +500,26 @@ export default function PhishingDetective() {
   }, [game]);
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 overflow-x-hidden">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <div>
+          <div className="min-w-0">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs mb-2">
               <IconShield size={12} /> Phishing Detective
             </div>
-            <h1 className="text-xl font-bold">Spot the Phish</h1>
-            <p className="text-sm text-muted-foreground">Identify phishing emails and learn to spot the clues</p>
+            <h1 className="text-lg sm:text-xl font-bold">Spot the Phish</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Identify phishing emails and learn to spot the clues</p>
           </div>
         </div>
 
-        {/* Score Bar */}
+          {/* Score Bar */}
         {game.phase !== "menu" && (
           <GlassCard glow="none" className="p-3 mb-4">
-            <div className="flex items-center justify-between text-xs font-mono">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 text-[10px] sm:text-xs font-mono">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span>Score: <span className="text-cyan-400 font-bold">{game.score}</span></span>
-                <span>Streak: <span className="text-orange-400 font-bold">{game.streak}🔥</span></span>
+                <span>Streak: <span className="text-orange-400 font-bold">{game.streak}</span></span>
                 <span>Accuracy: <span className="text-green-400 font-bold">{accuracy}%</span></span>
               </div>
               <div className="flex items-center gap-3">
@@ -548,7 +548,8 @@ export default function PhishingDetective() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto mb-8">
               {(Object.entries(DIFFICULTY_CONFIG) as [Difficulty, typeof DIFFICULTY_CONFIG[Difficulty]][]).map(([key, cfg]) => (
                 <button key={key} onClick={() => startGame(key)}
-                  className={cn("p-4 rounded-xl border bg-white/5 hover:bg-white/10 transition-all text-center",
+                  style={{ touchAction: "manipulation" }}
+                  className={cn("p-4 rounded-xl border bg-white/5 hover:bg-white/10 transition-all text-center min-h-[80px]",
                     cfg.color + " border-white/10 hover:border-white/20")}>
                   <div className="text-lg font-bold">{cfg.label}</div>
                   <div className="text-xs text-muted-foreground mt-1">×{cfg.multiplier} points</div>
@@ -579,9 +580,10 @@ export default function PhishingDetective() {
                     className={cn("p-3 cursor-pointer transition-all border-white/5 hover:border-cyan-500/20",
                       idx === 0 && "border-cyan-500/30 bg-cyan-500/5")}
                     onClick={idx === 0 ? openEmail : undefined}
+                    style={idx === 0 ? { touchAction: "manipulation" } : undefined}
                   >
-                    <div className="flex items-start gap-3">
-                      <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0",
+                    <div className="flex items-start gap-3 min-h-[44px]">
+                      <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0",
                         email.isPhishing ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400")}>
                         {email.senderName[0]}
                       </div>
@@ -590,7 +592,7 @@ export default function PhishingDetective() {
                           <span className={cn("text-xs font-medium", idx === 0 ? "text-foreground" : "text-muted-foreground")}>{email.senderName}</span>
                           <span className="text-xs text-muted-foreground">Now</span>
                         </div>
-                        <div className={cn("text-sm truncate", idx === 0 ? "font-semibold" : "text-muted-foreground")}>{email.subject}</div>
+                        <div className={cn("text-xs sm:text-sm truncate", idx === 0 ? "font-semibold" : "text-muted-foreground")}>{email.subject}</div>
                         <div className="text-xs text-muted-foreground truncate">{email.body.split("\n").find(l => l.trim())}</div>
                       </div>
                       {idx === 0 && <div className="w-2 h-2 rounded-full bg-cyan-400 shrink-0 mt-2" />}
@@ -628,47 +630,50 @@ export default function PhishingDetective() {
         {game.phase === "email" && currentEmail && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <button onClick={() => { setShowInbox(true); setGame(prev => ({ ...prev, phase: "inbox" })); }}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-all">
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-3 transition-all min-h-[44px]" style={{ touchAction: "manipulation" }}>
               <IconArrowLeft size={14} /> Back to inbox
             </button>
 
-            <GlassCard glow="none" className="p-6">
+            <GlassCard glow="none" className="p-4 sm:p-6">
               {/* Email Header */}
               <div className="flex items-start gap-3 mb-4 pb-4 border-b border-white/5">
-                <div className={cn("w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                <div className={cn("w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0",
                   currentEmail.isPhishing ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400")}>
                   {currentEmail.senderName[0]}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-sm font-semibold">{currentEmail.subject}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">
+                  <div className="text-xs sm:text-sm font-semibold break-words">{currentEmail.subject}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 break-all">
                     From: <span className={cn(showResult && currentEmail.isPhishing && "text-red-400")}>{currentEmail.senderName} &lt;{currentEmail.senderEmail}&gt;</span>
                   </div>
-                  <div className="text-xs text-muted-foreground">To: {currentEmail.recipient}</div>
+                  <div className="text-[10px] sm:text-xs text-muted-foreground break-all">To: {currentEmail.recipient}</div>
                 </div>
-                <div className={cn("text-xs font-mono px-2 py-0.5 rounded-full", config.color + " bg-white/5")}>
+                <div className={cn("text-[10px] sm:text-xs font-mono px-2 py-0.5 rounded-full shrink-0", config.color + " bg-white/5")}>
                   {config.label}
                 </div>
               </div>
 
               {/* Email Body */}
-              <div className="text-sm leading-relaxed whitespace-pre-wrap font-mono text-muted-foreground mb-6">
+              <div className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap font-mono text-muted-foreground mb-6 break-words">
                 {currentEmail.body}
               </div>
 
               {/* Judgment Buttons */}
               {!showResult && (
-                <div className="flex items-center gap-3 justify-center">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 justify-center">
                   <button onClick={() => submitJudgment("safe")}
-                    className="px-6 py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all text-sm font-semibold flex items-center gap-2">
+                    style={{ touchAction: "manipulation" }}
+                    className="px-4 py-3 sm:px-6 sm:py-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition-all text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px]">
                     <IconShield size={16} /> Safe
                   </button>
                   <button onClick={() => submitJudgment("unsure")}
-                    className="px-6 py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition-all text-sm font-semibold flex items-center gap-2">
+                    style={{ touchAction: "manipulation" }}
+                    className="px-4 py-3 sm:px-6 sm:py-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 transition-all text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px]">
                     <IconAlertTriangle size={16} /> Unsure
                   </button>
                   <button onClick={() => submitJudgment("phishing")}
-                    className="px-6 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all text-sm font-semibold flex items-center gap-2">
+                    style={{ touchAction: "manipulation" }}
+                    className="px-4 py-3 sm:px-6 sm:py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-all text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px]">
                     <IconFlag size={16} /> Phishing
                   </button>
                 </div>
@@ -737,7 +742,7 @@ export default function PhishingDetective() {
 
                   {/* Next Button */}
                   <div className="flex justify-center pt-2">
-                    <Button variant="primary" size="md" onClick={nextEmail}>
+                    <Button variant="primary" size="md" onClick={nextEmail} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                       {isLastEmail ? "View Results" : "Next Email"}
                       <IconArrowRight size={14} className="ml-1.5" />
                     </Button>
@@ -816,11 +821,11 @@ export default function PhishingDetective() {
               </div>
             </GlassCard>
 
-            <div className="flex justify-center gap-3">
-              <Button variant="primary" size="md" onClick={() => startGame(game.difficulty)}>
+            <div className="flex flex-col sm:flex-row justify-center gap-3">
+              <Button variant="primary" size="md" onClick={() => startGame(game.difficulty)} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                 <IconRefresh size={14} className="mr-1.5" /> Play Again
               </Button>
-              <Button variant="glass" size="md" onClick={() => setGame(prev => ({ ...prev, phase: "menu" }))}>
+              <Button variant="glass" size="md" onClick={() => setGame(prev => ({ ...prev, phase: "menu" }))} className="w-full sm:w-auto min-h-[44px]" style={{ touchAction: "manipulation" }}>
                 Change Difficulty
               </Button>
             </div>

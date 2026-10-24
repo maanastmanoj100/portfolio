@@ -342,7 +342,7 @@ export default function PacketDefender() {
   const accuracy = totalCorrect > 0 ? Math.round((totalCorrect / (totalCorrect + alienPackets + blockedPackets)) * 100) : 0;
 
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 overflow-x-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
@@ -367,7 +367,8 @@ export default function PacketDefender() {
             <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto mb-8">
               {(["normal", "hard", "expert"] as Difficulty[]).map(d => (
                 <button key={d} onClick={() => startGame(d)}
-                  className={cn("p-4 rounded-xl border bg-white/5 hover:bg-white/10 transition-all text-center",
+                  style={{ touchAction: "manipulation" }}
+                  className={cn("p-4 rounded-xl border bg-white/5 hover:bg-white/10 transition-all text-center min-h-[80px]",
                     d === "normal" ? "border-green-500/20 text-green-400" :
                     d === "hard" ? "border-amber-500/20 text-amber-400" :
                     "border-red-500/20 text-red-400")}>
@@ -389,8 +390,8 @@ export default function PacketDefender() {
         {(phase === "playing" || phase === "boss") && (
           <>
             <GlassCard glow="none" className="p-2.5 mb-3">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-1.5 text-[10px] sm:text-xs font-mono">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span>Score: <span className="text-cyan-400 font-bold">{score}</span></span>
                   <span>Level: <span className="text-purple-400 font-bold">{level}</span></span>
                   <span>Combo: <span className="text-orange-400 font-bold">×{combo}</span></span>
@@ -399,10 +400,10 @@ export default function PacketDefender() {
                       <span key={i} className="w-2 h-2 rounded-full bg-red-400 inline-block" />
                     ))}
                   </span>
+                  {phase === "boss" && <span className="text-red-400 font-bold animate-pulse">⚠ BOSS WAVE</span>}
                 </div>
                 <div className="flex items-center gap-2">
-                  {phase === "boss" && <span className="text-red-400 font-bold animate-pulse">⚠ BOSS WAVE</span>}
-                  <span className="text-muted-foreground">Allowed: {alienPackets} Blocked: {blockedPackets}</span>
+                  <span className="text-muted-foreground">A:{alienPackets} B:{blockedPackets}</span>
                 </div>
               </div>
               <div className="mt-1.5 h-1 rounded-full bg-white/5 overflow-hidden">
@@ -412,7 +413,7 @@ export default function PacketDefender() {
             </GlassCard>
 
             {/* Network Topology */}
-            <div className="relative w-full aspect-[3/1] bg-black/40 rounded-2xl border border-white/5 overflow-hidden mb-0">
+            <div className="relative w-full aspect-[3/1] sm:aspect-[4/1] bg-black/40 rounded-2xl border border-white/5 overflow-hidden mb-0">
               {/* Grid background */}
               <div className="absolute inset-0 opacity-[0.03]" style={{
                 backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.3) 1px, transparent 1px)",
@@ -517,13 +518,15 @@ export default function PacketDefender() {
                       <div className="text-xs opacity-60 mt-0.5">{judgingPacket.info}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3 justify-center">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 justify-center">
                     <button onClick={() => judge(true)}
-                      className="px-6 py-2.5 rounded-xl bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25 transition-all text-sm font-semibold flex items-center gap-2">
+                      style={{ touchAction: "manipulation" }}
+                      className="px-4 sm:px-6 py-3 sm:py-2.5 rounded-xl bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25 transition-all text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px]">
                       <IconCheck size={16} /> Allow
                     </button>
                     <button onClick={() => judge(false)}
-                      className="px-6 py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-all text-sm font-semibold flex items-center gap-2">
+                      style={{ touchAction: "manipulation" }}
+                      className="px-4 sm:px-6 py-3 sm:py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-all text-sm font-semibold flex items-center justify-center gap-2 min-h-[48px]">
                       <IconX size={16} /> Block
                     </button>
                   </div>
@@ -532,7 +535,7 @@ export default function PacketDefender() {
             )}
 
             {/* Power-ups */}
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex flex-wrap items-center gap-2 mt-2">
               {(["slowmo", "firewall", "freeze"] as PowerUp[]).map(pt => {
                 const isActive = powerUp?.type === pt && powerUp?.active;
                 const icons: Record<PowerUp, { icon: typeof IconBolt; label: string }> = {
@@ -543,10 +546,11 @@ export default function PacketDefender() {
                 const I = icons[pt].icon;
                 return (
                   <button key={pt} onClick={() => activatePowerUp(pt)} disabled={isActive}
-                    className={cn("flex items-center gap-1 px-2.5 py-1 rounded-lg border text-xs font-mono transition-all",
+                    style={{ touchAction: "manipulation" }}
+                    className={cn("flex flex-1 sm:flex-initial items-center justify-center gap-1.5 px-3 py-2.5 sm:px-2.5 sm:py-1 rounded-lg border text-xs font-mono transition-all min-h-[44px]",
                       isActive ? "bg-cyan-500/15 border-cyan-500/30 text-cyan-400" :
                       "bg-white/5 border-white/10 text-muted-foreground hover:text-foreground hover:border-white/20 disabled:opacity-30")}>
-                    <I size={10} /> {icons[pt].label}
+                    <I size={12} /> {icons[pt].label}
                   </button>
                 );
               })}
@@ -559,12 +563,12 @@ export default function PacketDefender() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className={cn("fixed bottom-8 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border text-xs max-w-md",
+                  className={cn("fixed bottom-8 left-4 right-4 sm:left-1/2 sm:-translate-x-1/2 z-50 px-4 py-2.5 rounded-xl border text-xs max-w-md sm:mx-auto",
                     lastResult.correct ? "bg-green-500/10 border-green-500/20 text-green-400" : "bg-red-500/10 border-red-500/20 text-red-400")}
                 >
                   <div className="flex items-center gap-2">
                     {lastResult.correct ? <IconCheck size={14} /> : <IconX size={14} />}
-                    <span className="font-semibold">{lastResult.correct ? "Correct" : "Incorrect"}</span>
+                    <span className="font-semibold whitespace-nowrap">{lastResult.correct ? "Correct" : "Incorrect"}</span>
                     <span className="text-muted-foreground">— {lastResult.type}: {lastResult.explanation}</span>
                   </div>
                 </motion.div>
@@ -580,7 +584,7 @@ export default function PacketDefender() {
               <IconTrophy size={40} className="mx-auto text-amber-400 mb-4" />
               <h2 className="text-2xl font-bold mb-1">Network Breach!</h2>
               <p className="text-sm text-muted-foreground mb-6">Your firewall was overwhelmed</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-lg mx-auto mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 max-w-lg mx-auto mb-6">
                 <div className="p-3 rounded-xl bg-white/5"><div className="text-lg font-bold text-cyan-400">{score}</div><div className="text-xs text-muted-foreground">Score</div></div>
                 <div className="p-3 rounded-xl bg-white/5"><div className="text-lg font-bold text-purple-400">{level}</div><div className="text-xs text-muted-foreground">Level</div></div>
                 <div className="p-3 rounded-xl bg-white/5"><div className="text-lg font-bold text-orange-400">{maxCombo}</div><div className="text-xs text-muted-foreground">Best Combo</div></div>

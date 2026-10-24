@@ -54,11 +54,12 @@ function Sidebar({
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2 text-left transition-all duration-200 ${
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-all duration-200 touch-action-manipulation ${
                 isActive
                   ? "text-cyan bg-cyan/10 border-r-2 border-cyan"
                   : "text-foreground-tertiary hover:text-foreground hover:bg-white/[0.02] border-r-2 border-transparent"
               }`}
+              style={{ minHeight: 44 }}
               title={collapsed ? item.label : undefined}
             >
               <Icon size={15} className="shrink-0" />
@@ -215,24 +216,25 @@ export function AttackMapPage() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen pt-14">
+      <div className="min-h-screen pt-14 overflow-x-hidden">
         <div className="glass-card rounded-none rounded-b-xl border-t-0 sticky top-14 z-20">
-          <div className="flex items-center justify-between px-4 py-2.5">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-2.5 text-foreground-tertiary hover:text-foreground transition-colors">
+            <div className="flex items-center justify-between px-4 py-2.5">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-3 text-foreground-tertiary hover:text-foreground transition-colors touch-action-manipulation shrink-0" style={{ minWidth: 44, minHeight: 44 }}>
                 {sidebarCollapsed ? <IconMenu2 size={16} /> : <IconX size={16} />}
               </button>
-              <div className="flex items-center gap-2">
-                <IconRadar size={14} className="text-cyan" />
-                <span className="text-xs font-mono text-foreground-secondary">Attack Map</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <IconRadar size={14} className="text-cyan shrink-0" />
+                <span className="text-xs font-mono text-foreground-secondary truncate">Attack Map</span>
               </div>
-              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">● LIVE</span>
+              <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">● LIVE</span>
             </div>
             <button
               onClick={() => useUIStore.getState().toggleRecruiterMode()}
-              className={`text-xs font-mono px-2 py-1 rounded-lg border transition-colors ${
+              className={`text-xs font-mono px-3 py-1.5 rounded-lg border transition-colors touch-action-manipulation ${
                 recruiterMode ? "bg-cyan/10 border-cyan/30 text-cyan" : "bg-white/5 border-border/40 text-foreground-tertiary hover:text-foreground"
               }`}
+              style={{ minHeight: 44 }}
             >
               {recruiterMode ? "Recruiter" : "Expert"}
             </button>

@@ -189,8 +189,8 @@ export function TerminalPage() {
 
   return (
     <PageTransition>
-      <div className="min-h-screen pt-20 pb-20">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+      <div className="min-h-screen pt-20 pb-20 overflow-x-hidden">
+        <div className="mx-auto w-full max-w-5xl px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -203,22 +203,22 @@ export function TerminalPage() {
             </h1>
           </motion.div>
 
-          <GlassCard className="overflow-hidden" glow="cyan" intensity="medium">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50 bg-black/20">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1.5">
+          <GlassCard className="overflow-hidden w-full" glow="cyan" intensity="medium">
+            <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 border-b border-border/50 bg-black/20">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex gap-1.5 shrink-0">
                   <div className="w-3 h-3 rounded-full bg-red-500/50" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500/50" />
                   <div className="w-3 h-3 rounded-full bg-green-500/50" />
                 </div>
-                <span className="text-xs text-soft-white/30 font-mono ml-3">cybernexus-terminal — ssh session</span>
+                <span className="text-xs text-soft-white/30 font-mono ml-3 truncate">cybernexus-terminal — ssh session</span>
               </div>
-              <span className="text-xs text-soft-white/20 font-mono">encrypted 🔒</span>
+              <span className="text-xs text-soft-white/20 font-mono shrink-0">encrypted</span>
             </div>
 
             <div
               ref={terminalRef}
-              className="h-[60vh] overflow-y-auto p-4 bg-black/40 font-mono space-y-1"
+              className="h-[50vh] sm:h-[60vh] overflow-y-auto p-3 sm:p-4 bg-black/40 font-mono space-y-1 text-xs sm:text-sm"
               onClick={() => inputRef.current?.focus()}
             >
               {lines.map((line, i) => (
@@ -226,31 +226,27 @@ export function TerminalPage() {
                   key={i}
                   className={cn(
                     fontSizes[fontSize],
-                    "leading-relaxed",
-                    line.type === "input" && "text-soft-white/60",
-                    line.type === "error" && "text-red-400",
-                    line.type === "system" && "text-cyan",
-                    line.type === "success" && "text-green-400",
-                    line.type === "output" && "text-soft-white/40"
+                    "leading-relaxed break-all"
                   )}
+                  style={{ color: line.type === "input" ? "rgba(255,255,255,0.6)" : line.type === "error" ? "#f87171" : line.type === "system" ? "#06b6d4" : line.type === "success" ? "#4ade80" : "rgba(255,255,255,0.4)" }}
                 >
                   {line.type === "system" && <span className="text-cyan mr-2">◆</span>}
                   {line.type === "success" && <span className="text-green-400 mr-2">✓</span>}
                   {line.type === "error" && <span className="text-red-400 mr-2">✗</span>}
-                  <span className="whitespace-pre">{line.text}</span>
+                  <span className="whitespace-pre-wrap break-words">{line.text}</span>
                 </div>
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 py-3 border-t border-border/50 bg-black/20">
-              <span className={cn("text-cyan shrink-0 font-mono", fontSizes[fontSize])}>visitor@cybernexus:~$</span>
+            <form onSubmit={handleSubmit} className="flex items-center gap-2 px-3 sm:px-4 py-3 border-t border-border/50 bg-black/20 sticky bottom-0">
+              <span className={cn("text-cyan shrink-0 font-mono text-xs sm:text-sm")}>visitor@cybernexus:~$</span>
               <input
                 ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 bg-transparent text-soft-white outline-none font-mono"
-                style={{ fontSize: fontSizes[fontSize] === "text-xs" ? "inherit" : undefined }}
+                className="flex-1 bg-transparent text-soft-white outline-none font-mono text-xs sm:text-sm touch-action-manipulation"
+                style={{ minHeight: 44 }}
                 spellCheck={false}
                 autoComplete="off"
               />

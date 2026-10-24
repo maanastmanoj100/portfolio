@@ -64,7 +64,7 @@ function RoleSelection({ onSelect, onBack }: { onSelect: (role: RoleId) => void;
     <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
       <div className="flex items-center justify-between mb-5">
         <SectionHeader label="Select Role" icon={IconUserShield} />
-        <button onClick={onBack} className="text-xs font-mono text-foreground-tertiary hover:text-foreground transition-colors">Back</button>
+        <button onClick={onBack} className="text-xs font-mono text-foreground-tertiary hover:text-foreground transition-colors px-3 py-2 touch-action-manipulation" style={{ minHeight: 44 }}>Back</button>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {ROLES.map((role, i) => (
@@ -74,7 +74,8 @@ function RoleSelection({ onSelect, onBack }: { onSelect: (role: RoleId) => void;
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.03 }}
             onClick={() => onSelect(role)}
-            className="text-left p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-cyan/30 transition-all"
+            className="text-left p-4 rounded-xl bg-white/[0.02] border border-white/5 hover:bg-white/[0.05] hover:border-cyan/30 transition-all touch-action-manipulation"
+            style={{ minHeight: 44 }}
           >
             <div className="text-xs font-medium text-cyan mb-0.5">{ROLE_LABELS[role]}</div>
             <p className="text-xs text-foreground/60 leading-relaxed">{ROLE_DESCRIPTIONS[role]}</p>
@@ -104,7 +105,7 @@ function InterviewConfigPanel({ role, onStart, onBack }: { role: RoleId; onStart
     <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
       <div className="flex items-center justify-between mb-5">
         <SectionHeader label="Interview Configuration" icon={IconTarget} />
-        <button onClick={onBack} className="text-xs font-mono text-foreground-tertiary hover:text-foreground transition-colors">Change Role</button>
+        <button onClick={onBack} className="text-xs font-mono text-foreground-tertiary hover:text-foreground transition-colors px-3 py-2 touch-action-manipulation" style={{ minHeight: 44 }}>Change Role</button>
       </div>
 
       <GlassCard className="p-5" glow="cyan" intensity="low">
@@ -124,9 +125,10 @@ function InterviewConfigPanel({ role, onStart, onBack }: { role: RoleId; onStart
                 key={d.id}
                 onClick={() => setDifficulty(d.id)}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-xs font-mono border transition-colors",
+                  "px-3 py-2 rounded-lg text-xs font-mono border transition-colors touch-action-manipulation",
                   difficulty === d.id ? "bg-cyan/20 border-cyan/30 text-cyan" : "bg-white/[0.02] border-white/10 text-foreground-tertiary hover:text-foreground"
                 )}
+                style={{ minHeight: 44 }}
               >
                 {d.label}
               </button>
@@ -157,10 +159,11 @@ function InterviewConfigPanel({ role, onStart, onBack }: { role: RoleId; onStart
                   setters[t.id](v => !v);
                 }}
                 className={cn(
-                  "px-2.5 py-1 rounded-lg text-xs font-mono border transition-colors",
+                  "px-2.5 py-2 rounded-lg text-xs font-mono border transition-colors touch-action-manipulation",
                   (t.id === "includeTechnical" ? includeTechnical : t.id === "includeBehavioral" ? includeBehavioral : t.id === "includeScenario" ? includeScenario : includePortfolio)
                     ? "bg-purple/20 border-purple/30 text-purple" : "bg-white/[0.02] border-white/10 text-foreground-tertiary"
                 )}
+                style={{ minHeight: 44 }}
               >{t.label}</button>
             ))}
           </div>
@@ -202,7 +205,7 @@ function FeedbackCard({ feedback }: { feedback: FeedbackResult }) {
       <GlassCard className="p-4" glow="purple" intensity="low">
         <div className="flex items-center justify-between mb-3">
           <span className="text-xs font-mono text-purple uppercase tracking-wider">AI Feedback</span>
-          <button onClick={() => setExpanded(!expanded)} className="text-xs font-mono text-foreground-tertiary hover:text-foreground">
+          <button onClick={() => setExpanded(!expanded)} className="text-xs font-mono text-foreground-tertiary hover:text-foreground px-3 py-2 touch-action-manipulation" style={{ minHeight: 44 }}>
             {expanded ? "Less" : "More"} <IconChevronDown size={8} className={cn("inline ml-0.5 transition-transform", expanded && "rotate-180")} />
           </button>
         </div>
@@ -431,7 +434,7 @@ export function InterviewSimulatorPage() {
 
   return (
     <PageTransition>
-      <main className="min-h-screen">
+      <main className="min-h-screen overflow-x-hidden">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-16">
           {phase === "hero" && (
             <>
@@ -538,7 +541,8 @@ export function InterviewSimulatorPage() {
                   value={answer}
                   onChange={e => setAnswer(e.target.value)}
                   placeholder={mode === "practice" ? "Type your answer here..." : "Type your response..."}
-                  className="w-full min-h-[100px] p-4 rounded-xl bg-white/[0.03] border border-white/10 text-xs text-foreground/90 font-mono leading-relaxed resize-none outline-none focus:border-cyan/30 transition-colors placeholder:text-foreground-tertiary"
+                  className="w-full min-h-[120px] p-4 rounded-xl bg-white/[0.03] border border-white/10 text-xs sm:text-sm text-foreground/90 font-mono leading-relaxed resize-none outline-none focus:border-cyan/30 transition-colors placeholder:text-foreground-tertiary touch-action-manipulation"
+                  style={{ minHeight: 120 }}
                   onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); if (answer.trim()) submitAnswer(); } }}
                 />
                 <div className="flex items-center justify-between mt-2">
