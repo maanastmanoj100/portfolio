@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { NetworkGraph } from "./network-graph";
-import { LoadingScreen } from "./loading-screen";
-import { IconArrowRight, IconDownload, IconMail, IconCode, IconCertificate, IconBrain, IconClock, IconGitCommit, IconShieldCheck, IconActivity, IconTerminal2, IconRobot, IconBrandGithub, IconUserShield, IconFileText, IconBook } from "@tabler/icons-react";
+import { IconDownload, IconMail, IconCode, IconCertificate, IconBrain, IconClock, IconGitCommit, IconShieldCheck, IconActivity, IconTerminal2, IconRobot, IconBrandGithub, IconUserShield, IconFileText, IconBook } from "@tabler/icons-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui-store";
@@ -33,10 +32,10 @@ const activityFeed = [
 ];
 
 const floatingWidgets = [
-  { label: "Current Lab", value: "Active Directory", icon: IconCode, x: "left-[5%]", y: "top-[15%]", delay: 1.6 },
-  { label: "Latest Project", value: "Threat Hunter", icon: IconShieldCheck, x: "right-[5%]", y: "top-[20%]", delay: 1.8 },
-  { label: "GitHub Commits", value: "142 this month", icon: IconGitCommit, x: "left-[3%]", y: "top-[55%]", delay: 2.0 },
-  { label: "Latest Article", value: "Zero-Day Analysis", icon: IconBook, x: "right-[4%]", y: "top-[60%]", delay: 2.2 },
+  { label: "Current Lab", value: "Active Directory", icon: IconCode, x: "left-[5%]", y: "top-[15%]", delay: 0.4, float: 4.2 },
+  { label: "Latest Project", value: "Threat Hunter", icon: IconShieldCheck, x: "right-[5%]", y: "top-[20%]", delay: 0.5, float: 5.1 },
+  { label: "GitHub Commits", value: "142 this month", icon: IconGitCommit, x: "left-[3%]", y: "top-[55%]", delay: 0.6, float: 4.6 },
+  { label: "Latest Article", value: "Zero-Day Analysis", icon: IconBook, x: "right-[4%]", y: "top-[60%]", delay: 0.7, float: 5.6 },
 ];
 
 function AnimatedCounter({ value, suffix = "" }: { value: number; suffix?: string }) {
@@ -195,7 +194,7 @@ function RightPanel() {
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: "73%" }}
-              transition={{ duration: 1.5, delay: 1.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.2, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
               className="h-full rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-purple-accent)]"
             />
           </div>
@@ -237,7 +236,7 @@ function FloatingWidgets() {
           >
             <motion.div
               animate={{ y: [0, -4, 0] }}
-              transition={{ duration: 4 + Math.random() * 2, repeat: Infinity, ease: "easeInOut", delay: Math.random() * 2 }}
+              transition={{ duration: w.float, repeat: Infinity, ease: "easeInOut", delay: w.delay }}
               className="glass-card p-2.5 min-w-[130px]"
             >
               <div className="flex items-center gap-1.5 mb-0.5">
@@ -258,8 +257,8 @@ function ActivityFeed() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.8, delay: 1.4 }}
-      className="absolute bottom-32 left-1/2 -translate-x-1/2 hidden lg:block"
+      transition={{ duration: 0.8, delay: 0.3 }}
+      className="w-full lg:absolute lg:bottom-32 lg:left-1/2 lg:-translate-x-1/2 lg:w-auto mt-6 lg:mt-0 px-4 lg:px-0"
     >
       <GlassCard variant="small" className="p-3 min-w-[240px]">
         <div className="text-xs font-mono text-[var(--color-foreground-tertiary)] tracking-wider uppercase mb-2">
@@ -273,7 +272,7 @@ function ActivityFeed() {
                 key={item.action}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1.6 + i * 0.15 }}
+                transition={{ delay: 0.35 + i * 0.08 }}
                 className="flex items-center gap-2"
               >
                 <Icon size={10} className="text-[var(--color-foreground-tertiary)]" />
@@ -299,28 +298,28 @@ function QuickActions() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, delay: 1.6 }}
-      className="fixed right-6 top-1/2 -translate-y-1/2 z-40 hidden lg:flex flex-col gap-2"
+      transition={{ duration: 0.6, delay: 0.4 }}
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 lg:right-6 lg:top-1/2 lg:left-auto lg:-translate-y-1/2 lg:bottom-auto flex lg:flex-col gap-2"
     >
-      <div className="glass-card p-2 flex flex-col gap-1.5">
+      <div className="glass-card p-2 flex flex-row lg:flex-col gap-1.5">
         <button
           onClick={() => ui.setHackerTerminalOpen(true)}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+          className="flex items-center justify-center min-w-[40px] min-h-[40px] lg:w-9 lg:h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
           title="Open Terminal"
         >
           <IconTerminal2 size={16} />
         </button>
         <button
           onClick={() => ui.setAiAssistantOpen(true)}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+          className="flex items-center justify-center min-w-[40px] min-h-[40px] lg:w-9 lg:h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
           title="AI Assistant"
         >
           <IconRobot size={16} />
         </button>
-        <div className="w-full h-px bg-[rgba(255,255,255,0.06)]" />
+        <div className="hidden lg:block w-full h-px bg-[rgba(255,255,255,0.06)]" />
         <a
           href="/resume"
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+          className="flex items-center justify-center min-w-[40px] min-h-[40px] lg:w-9 lg:h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
           title="Download Resume"
         >
           <IconDownload size={16} />
@@ -329,15 +328,15 @@ function QuickActions() {
           href="https://github.com/maanastmanoj"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+          className="flex items-center justify-center min-w-[40px] min-h-[40px] lg:w-9 lg:h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)] hover:bg-[rgba(255,255,255,0.04)] transition-colors"
           title="View GitHub"
         >
           <IconBrandGithub size={16} />
         </a>
-        <div className="w-full h-px bg-[rgba(255,255,255,0.06)]" />
+        <div className="hidden lg:block w-full h-px bg-[rgba(255,255,255,0.06)]" />
         <button
           onClick={() => ui.toggleRecruiterMode()}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-accent)] hover:bg-[rgba(0,180,216,0.06)] transition-colors"
+          className="flex items-center justify-center min-w-[40px] min-h-[40px] lg:w-9 lg:h-9 rounded-lg text-[var(--color-foreground-tertiary)] hover:text-[var(--color-accent)] hover:bg-[rgba(0,180,216,0.06)] transition-colors"
           title="Recruiter Mode"
         >
           <IconUserShield size={16} />
@@ -352,15 +351,15 @@ function ScrollIndicator() {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ delay: 2 }}
-      className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2"
+      transition={{ delay: 0.5 }}
+      className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 scale-75 sm:scale-100"
     >
       <span className="text-xs font-mono text-[var(--color-foreground-tertiary)] tracking-widest uppercase">Scroll</span>
       <motion.div
         animate={{ y: [0, 6, 0] }}
         transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-foreground-tertiary)]">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-[var(--color-foreground-tertiary)] w-3 h-3 sm:w-4 sm:h-4">
           <path d="M12 5v14M5 12l7 7 7-7" />
         </svg>
       </motion.div>
@@ -369,7 +368,6 @@ function ScrollIndicator() {
 }
 
 export function Hero() {
-  const [loading, setLoading] = useState(true);
   const sectionRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     target: sectionRef,
@@ -380,28 +378,19 @@ export function Hero() {
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0.6]);
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -40]);
 
-  const handleLoadingComplete = useCallback(() => {
-    setLoading(false);
-  }, []);
-
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
   return (
     <>
-      {mounted && <LoadingScreen onComplete={handleLoadingComplete} />}
-
       <AnimatePresence>
-        {!loading && (
-          <motion.section
-            ref={sectionRef}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-16 pb-24"
-            style={{ scale: heroScale, opacity: heroOpacity, y: heroY }}
-          >
-            <FloatingWidgets />
+        <motion.section
+          ref={sectionRef}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4 }}
+          className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-16 pb-24"
+          style={{ scale: heroScale, opacity: heroOpacity, y: heroY }}
+        >
+          <FloatingWidgets />
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center">
@@ -415,7 +404,7 @@ export function Hero() {
                   transition={{ duration: 1, delay: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   className="lg:col-span-4 flex items-center justify-center"
                 >
-                  <div className="w-full max-w-[320px] aspect-square">
+                  <div className="w-full max-w-[280px] sm:max-w-[320px] aspect-square">
                     <NetworkGraph />
                   </div>
                 </motion.div>
@@ -426,10 +415,9 @@ export function Hero() {
               </div>
             </div>
 
-            <ActivityFeed />
-            <ScrollIndicator />
-          </motion.section>
-        )}
+          <ActivityFeed />
+          <ScrollIndicator />
+        </motion.section>
       </AnimatePresence>
 
       <QuickActions />

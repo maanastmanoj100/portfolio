@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useRef, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { forwardRef, useRef, useState, useEffect, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { IconCheck, IconX } from "@tabler/icons-react";
@@ -24,11 +24,18 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
     const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    useEffect(() => {
+      setIsTouchDevice(
+        typeof window !== "undefined" && window.matchMedia("(hover: none) and (pointer: coarse)").matches
+      );
+    }, []);
 
     const state: ButtonState = loading ? "loading" : success ? "success" : error ? "error" : "idle";
 
     const handleMouseMove = (e: React.MouseEvent<HTMLButtonElement>) => {
-      if (!magnetic || disabled || state !== "idle") return;
+      if (!magnetic || disabled || state !== "idle" || isTouchDevice) return;
       const rect = buttonRef.current?.getBoundingClientRect();
       if (!rect) return;
       const x = (e.clientX - rect.left - rect.width / 2) * 0.15;
@@ -55,7 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={buttonRef}
         disabled={disabled || state === "loading"}
         className={cn(
-          "relative inline-flex items-center justify-center gap-2 rounded-xl font-medium overflow-hidden select-none",
+          "relative inline-flex items-center justify-center gap-2 rounded-xl font-medium overflow-hidden select-none min-h-[44px]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-background)]",
           "transition-colors duration-300",
           size === "sm" && "px-4 py-2 text-xs",
@@ -100,13 +107,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           disabled && "opacity-40 pointer-events-none",
           className,
         )}
+        style={{ touchAction: "manipulation" } as React.CSSProperties}
         animate={{
           x: state === "idle" ? mousePos.x : 0,
           y: state === "idle" ? mousePos.y : 0,
           scale: state === "idle" ? (mousePos.x !== 0 || mousePos.y !== 0 ? 1.02 : 1) : 1,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 25, mass: 0.3 }}
-        whileTap={disabled || state !== "idle" ? {} : { scale: 0.97 }}
+        whileTap={disabled || state !== "idle" ? {} : { scale: 0.96 }}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={handleClick}

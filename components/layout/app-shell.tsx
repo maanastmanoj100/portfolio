@@ -1,61 +1,74 @@
 "use client";
 
-import { type ReactNode, Suspense, useEffect } from "react";
-import { usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { type ReactNode } from "react";
+import dynamic from "next/dynamic";
+import { useUIStore } from "@/stores/ui-store";
 import { AppProvider } from "@/components/layout/providers";
 import { Topbar } from "./topbar";
 import { NavigationDock } from "./navigation-dock";
 import { Footer } from "./footer";
-import { HeroBackground } from "@/components/three/hero-background";
-import { CommandPalette } from "@/components/features/command-palette";
-import { SearchModal } from "@/components/features/search-modal";
-import { AiAssistant } from "@/components/features/ai-assistant";
-import { HackerTerminal } from "@/components/features/hacker-terminal";
-import { RecruiterBanner } from "@/components/features/recruiter-banner";
-import { MatrixRain } from "@/components/features/matrix-rain";
-import { EasterEggs } from "@/components/features/easter-eggs";
 import { ToastContainer } from "@/components/feedback/toast";
-import { CursorGlow } from "@/components/ui/cursor-effects";
-import { useMouseTracker } from "@/stores/mouse-store";
-import { useUIStore } from "@/stores/ui-store";
-import { pageEnter } from "@/lib/animation";
+import { EasterEggs } from "@/components/features/easter-eggs";
+
+/**
+ * Everything below is interactive UI that only matters once the visitor opens
+ * it. Each module is code-split and mounted on demand so it never contributes
+ * to the initial JavaScript payload or the first paint.
+ */
+const CommandPalette = dynamic(
+  () => import("@/components/features/command-palette").then((m) => m.CommandPalette),
+  { ssr: false },
+);
+const SearchModal = dynamic(
+  () => import("@/components/features/search-modal").then((m) => m.SearchModal),
+  { ssr: false },
+);
+const AiAssistant = dynamic(
+  () => import("@/components/features/ai-assistant").then((m) => m.AiAssistant),
+  { ssr: false },
+);
+const HackerTerminal = dynamic(
+  () => import("@/components/features/hacker-terminal").then((m) => m.HackerTerminal),
+  { ssr: false },
+);
+const RecruiterBanner = dynamic(
+  () => import("@/components/features/recruiter-banner").then((m) => m.RecruiterBanner),
+  { ssr: false },
+);
+const Launchpad = dynamic(
+  () => import("@/components/features/launchpad").then((m) => m.Launchpad),
+  { ssr: false },
+);
+const MatrixRain = dynamic(
+  () => import("@/components/features/matrix-rain").then((m) => m.MatrixRain),
+  { ssr: false },
+);
 
 function ShellContent({ children }: { children: ReactNode }) {
-  useMouseTracker();
-  const pathname = usePathname();
-  const setMobileMenuOpen = useUIStore((s) => s.setMobileMenuOpen);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [pathname, setMobileMenuOpen]);
+  const commandPaletteOpen = useUIStore((s) => s.commandPaletteOpen);
+  const searchOpen = useUIStore((s) => s.searchOpen);
+  const aiAssistantOpen = useUIStore((s) => s.aiAssistantOpen);
+  const hackerTerminalOpen = useUIStore((s) => s.hackerTerminalOpen);
+  const launchpadOpen = useUIStore((s) => s.launchpadOpen);
+  const recruiterMode = useUIStore((s) => s.recruiterMode);
+  const matrixMode = useUIStore((s) => s.matrixMode);
 
   return (
     <>
       <Topbar />
-      <HeroBackground />
-      <CursorGlow />
       <NavigationDock />
-      <CommandPalette />
-      <SearchModal />
-      <AiAssistant />
-      <HackerTerminal />
-      <RecruiterBanner />
-      <MatrixRain />
+      {commandPaletteOpen && <CommandPalette />}
+      {searchOpen && <SearchModal />}
+      {aiAssistantOpen && <AiAssistant />}
+      {hackerTerminalOpen && <HackerTerminal />}
+      {launchpadOpen && <Launchpad />}
+      {recruiterMode && <RecruiterBanner />}
+      {matrixMode && <MatrixRain />}
       <EasterEggs />
       <ToastContainer />
-      <AnimatePresence mode="wait">
-        <motion.main
-          key={pathname}
-          variants={pageEnter}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          className="min-h-screen pt-14 pb-24 md:pb-28"
-        >
-          {children}
-        </motion.main>
-      </AnimatePresence>
+
+      <main className="min-h-screen pt-14 pb-28 safe-area-bottom">{children}</main>
+
       <Footer />
     </>
   );
@@ -64,9 +77,7 @@ function ShellContent({ children }: { children: ReactNode }) {
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <AppProvider>
-      <Suspense fallback={null}>
-        <ShellContent>{children}</ShellContent>
-      </Suspense>
+      <ShellContent>{children}</ShellContent>
     </AppProvider>
   );
 }

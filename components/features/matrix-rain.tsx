@@ -25,7 +25,7 @@ export function MatrixRain() {
     let animationId: number;
 
     const draw = () => {
-      ctx.fillStyle = "rgba(5, 8, 15, 0.05)";
+      ctx.fillStyle = "rgba(10, 14, 10, 0.05)";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.fillStyle = "#00ff41";

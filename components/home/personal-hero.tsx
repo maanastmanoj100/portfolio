@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -23,7 +23,6 @@ const stats = [
 
 export function PersonalHero() {
   const [titleIndex, setTitleIndex] = useState(0);
-  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -33,30 +32,28 @@ export function PersonalHero() {
   }, []);
 
   return (
-    <section className="min-h-screen flex items-center pt-16 pb-24">
+    <section className="min-h-screen flex items-center py-16 md:py-24">
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
           {/* Left: Photo + Identity */}
           <motion.div
-            initial={{ opacity: 0, x: -30 }}
+            initial={false}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-5 flex flex-col items-center lg:items-start"
           >
             {/* Profile Image */}
             <div className="relative mb-6 group">
-              <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-purple-500/10 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center overflow-hidden">
+              <div className="w-24 h-24 sm:w-40 sm:h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-purple-500/10 to-blue-500/20 border border-cyan-500/20 flex items-center justify-center overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                {!imgError ? (
-                  <img
-                    src="/images/profile.jpg"
-                    alt="Maanas T Manoj"
-                    className="w-full h-full object-cover"
-                    onError={() => setImgError(true)}
-                  />
-                ) : (
-                  <IconUser size={80} className="text-cyan-400/60" />
-                )}
+                {/*
+                  No profile photo asset exists in /public, so we render the icon
+                  fallback instead of requesting a missing file (avoids a 404 on
+                  every page load). To use a photo, drop it at
+                  /public/images/profile.jpg and swap this for an <img> with
+                  width/height set to avoid layout shift.
+                */}
+                <IconUser size={80} className="text-cyan-400/60" />
               </div>
               <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse-glow" />
@@ -83,14 +80,14 @@ export function PersonalHero() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -8 }}
                     transition={{ duration: 0.3 }}
-                    className="text-lg text-foreground font-medium"
+                    className="text-base sm:text-lg text-foreground font-medium"
                   >
                     {titles[titleIndex]}
                   </motion.span>
                 </AnimatePresence>
               </div>
 
-              <p className="text-sm text-foreground-secondary leading-relaxed max-w-md mx-auto lg:mx-0 mb-6">
+              <p className="text-sm text-foreground-secondary leading-relaxed max-w-full sm:max-w-md mx-auto lg:mx-0 mb-6">
                 Building secure systems through offensive security, defensive engineering, and AI-powered automation. Passionate about penetration testing, incident response, and security architecture.
               </p>
 
@@ -102,21 +99,21 @@ export function PersonalHero() {
                 <span>maanastmanoj</span>
               </div>
 
-              <div className="flex flex-wrap items-center gap-3 justify-center lg:justify-start">
-                <Link href="/projects">
-                  <Button variant="primary" size="md" magnetic>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 justify-center lg:justify-start w-full">
+                <Link href="/projects" className="w-full sm:w-auto">
+                  <Button variant="primary" size="md" magnetic className="w-full sm:w-auto">
                     <IconCode size={16} />
                     Explore Projects
                   </Button>
                 </Link>
-                <Link href="/resume">
-                  <Button variant="secondary" size="md" magnetic>
+                <Link href="/resume" className="w-full sm:w-auto">
+                  <Button variant="secondary" size="md" magnetic className="w-full sm:w-auto">
                     <IconDownload size={16} />
                     View Resume
                   </Button>
                 </Link>
-                <Link href="/contact">
-                  <Button variant="ghost" size="md">
+                <Link href="/contact" className="w-full sm:w-auto">
+                  <Button variant="ghost" size="md" className="w-full sm:w-auto">
                     <IconMail size={16} />
                     Contact
                   </Button>
@@ -127,7 +124,7 @@ export function PersonalHero() {
 
           {/* Right: Stats + Quick Info */}
           <motion.div
-            initial={{ opacity: 0, x: 30 }}
+            initial={false}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className="lg:col-span-7"
@@ -164,7 +161,7 @@ export function PersonalHero() {
             </GlassCard>
 
             {/* Quick Links */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mt-4">
               {[
                 { label: "Projects", href: "/projects", icon: IconCode },
                 { label: "Certifications", href: "/certifications", icon: IconCertificate },
@@ -172,7 +169,7 @@ export function PersonalHero() {
                 { label: "Arcade", href: "/arcade", icon: IconArrowRight },
               ].map((link) => (
                 <Link key={link.label} href={link.href}>
-                  <GlassCard glow="none" className="p-3 flex items-center gap-2 hover:border-cyan-500/20 transition-all cursor-pointer">
+                  <GlassCard glow="none" className="p-2 sm:p-3 flex items-center gap-2 hover:border-cyan-500/20 transition-all cursor-pointer min-h-[44px]">
                     <link.icon size={14} className="text-cyan-400 shrink-0" />
                     <span className="text-xs font-mono text-foreground-secondary">{link.label}</span>
                   </GlassCard>

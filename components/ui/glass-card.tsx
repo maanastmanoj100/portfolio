@@ -1,6 +1,6 @@
 "use client";
 
-import { type HTMLAttributes, forwardRef, useRef, useState } from "react";
+import { type HTMLAttributes, forwardRef, useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { cardHover } from "@/lib/animation";
@@ -23,9 +23,16 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
     const [glowX, setGlowX] = useState(50);
     const [glowY, setGlowY] = useState(50);
     const [isHovered, setIsHovered] = useState(false);
+    const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+    useEffect(() => {
+      setIsTouchDevice(
+        typeof window !== "undefined" && window.matchMedia("(hover: none) and (pointer: coarse)").matches
+      );
+    }, []);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (disableTilt) return;
+      if (disableTilt || isTouchDevice) return;
       const rect = cardRef.current?.getBoundingClientRect();
       if (!rect) return;
       const x = e.clientX - rect.left;
@@ -69,6 +76,7 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
           "border border-[rgba(255,255,255,0.06)]",
           "shadow-[0_4px_24px_rgba(0,0,0,0.4),0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.03)]",
           isHovered && "z-10",
+          isTouchDevice && glow !== "none" && "border-[rgba(255,255,255,0.12)]",
           variants[variant],
           className,
         )}
@@ -80,12 +88,15 @@ export const GlassCard = forwardRef<HTMLDivElement, GlassCardProps>(
           rotateY: disableTilt ? 0 : rotateY,
           boxShadow: isHovered
             ? "0 12px 48px rgba(0,0,0,0.5),0 2px 4px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.05)"
+            : isTouchDevice && glow !== "none"
+            ? "0 4px 24px rgba(0,0,0,0.4),0 1px 2px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.05)"
             : "0 4px 24px rgba(0,0,0,0.4),0 1px 2px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.03)",
-          borderColor: isHovered ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
+          borderColor: isHovered ? "rgba(255,255,255,0.12)" : isTouchDevice && glow !== "none" ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
           y: isHovered && !disableFloat ? -2 : 0,
         }}
         transition={{ type: "spring", stiffness: 300, damping: 28, mass: 0.4 }}
-        style={{ perspective: disableTilt ? undefined : 1000 }}
+        whileTap={{ scale: 0.98 }}
+        style={{ perspective: disableTilt ? undefined : 1000, touchAction: "manipulation" } as React.CSSProperties}
         {...(props as any)}
       >
         <div
