@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IconBrandGithub, IconMail } from "@tabler/icons-react";
+import { SystemStatus } from "@/components/features/system-status";
 import { profile } from "@/data/portfolio";
 
 const NAV = [
@@ -53,8 +54,11 @@ export function Footer() {
       </div>
 
       <div className="border-t border-border/60">
-        <div className="mx-auto max-w-5xl px-4 py-4 text-xs text-foreground-tertiary sm:px-6">
-          &copy; {year} {profile.name}. Project links verified {profile.lastVerified}.
+        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-2 px-4 py-4 text-xs text-foreground-tertiary sm:px-6">
+          <span>
+            &copy; {year} {profile.name}. Project links verified {profile.lastVerified}.
+          </span>
+          <SystemStatus />
         </div>
       </div>
     </footer>

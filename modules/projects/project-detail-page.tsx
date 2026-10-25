@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { IconArrowLeft, IconArrowUpRight, IconBrandGithub } from "@tabler/icons-react";
+import { ArchitecturePreview } from "@/components/portfolio/architecture-preview";
+import { CopyButton } from "@/components/portfolio/copy-button";
 import {
   featuredProjects,
   otherProjects,
@@ -86,6 +88,14 @@ export async function ProjectDetailPage({
             <IconBrandGithub size={15} />
             View source
           </a>
+          <CopyButton value={project.repoUrl} label="Copy repository URL" className="h-auto py-2.5" />
+          {project.architecture && (
+            <ArchitecturePreview
+              projectName={project.name}
+              architecture={project.architecture}
+              repoUrl={project.repoUrl}
+            />
+          )}
         </div>
       </header>
 

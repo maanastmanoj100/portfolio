@@ -3,6 +3,7 @@
 import { type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useUIStore } from "@/stores/ui-store";
+import { useToolsStore } from "@/stores/tools-store";
 import { AppProvider } from "@/components/layout/providers";
 import { SiteHeader } from "./site-header";
 import { Footer } from "./footer";
@@ -26,8 +27,12 @@ const AiAssistant = dynamic(
   () => import("@/components/features/ai-assistant").then((m) => m.AiAssistant),
   { ssr: false },
 );
-const HackerTerminal = dynamic(
-  () => import("@/components/features/hacker-terminal").then((m) => m.HackerTerminal),
+const PortfolioTerminal = dynamic(
+  () => import("@/components/features/portfolio-terminal").then((m) => m.PortfolioTerminal),
+  { ssr: false },
+);
+const CveLookup = dynamic(
+  () => import("@/components/features/cve-lookup").then((m) => m.CveLookup),
   { ssr: false },
 );
 const RecruiterBanner = dynamic(
@@ -48,6 +53,7 @@ function ShellContent({ children }: { children: ReactNode }) {
   const searchOpen = useUIStore((s) => s.searchOpen);
   const aiAssistantOpen = useUIStore((s) => s.aiAssistantOpen);
   const hackerTerminalOpen = useUIStore((s) => s.hackerTerminalOpen);
+  const cveOpen = useToolsStore((s) => s.cveOpen);
   const launchpadOpen = useUIStore((s) => s.launchpadOpen);
   const recruiterMode = useUIStore((s) => s.recruiterMode);
   const matrixMode = useUIStore((s) => s.matrixMode);
@@ -58,7 +64,8 @@ function ShellContent({ children }: { children: ReactNode }) {
       {commandPaletteOpen && <CommandPalette />}
       {searchOpen && <SearchModal />}
       {aiAssistantOpen && <AiAssistant />}
-      {hackerTerminalOpen && <HackerTerminal />}
+      {hackerTerminalOpen && <PortfolioTerminal />}
+      {cveOpen && <CveLookup />}
       {launchpadOpen && <Launchpad />}
       {recruiterMode && <RecruiterBanner />}
       {matrixMode && <MatrixRain />}

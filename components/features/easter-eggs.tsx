@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
+import { isEditableTarget } from "@/lib/keyboard";
 
 /**
  * Keyboard easter eggs.
@@ -28,6 +29,13 @@ export function EasterEggs() {
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
+      // Never consume keystrokes meant for typing, browser shortcuts or an
+      // open dialog (the command palette, terminal, CVE lookup, architecture).
+      if (e.defaultPrevented || e.isComposing) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (isEditableTarget(e.target)) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+
       if (e.key === konamiCode[konamiProgress]) {
         const next = konamiProgress + 1;
         if (next === konamiCode.length) {

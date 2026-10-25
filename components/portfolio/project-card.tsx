@@ -2,11 +2,17 @@ import Link from "next/link";
 import { IconArrowUpRight, IconBrandGithub } from "@tabler/icons-react";
 import type { PortfolioProject } from "@/data/portfolio";
 
+type ProjectCardData = Pick<
+  PortfolioProject,
+  "slug" | "name" | "tagline" | "stack" | "status" | "repoUrl" | "liveUrl"
+>;
+
 /**
  * Presentational project card for the primary (Home / Projects) surfaces.
- * Plain markup with no client JavaScript — it renders in the initial HTML.
+ * Plain markup with no client JavaScript of its own; the Projects explorer
+ * passes only the fields this card needs.
  */
-export function ProjectCard({ project }: { project: PortfolioProject }) {
+export function ProjectCard({ project }: { project: ProjectCardData }) {
   return (
     <article className="group flex h-full flex-col rounded-xl border border-border bg-white/[0.02] p-5 transition-colors hover:border-border-hover">
       <div className="flex items-start justify-between gap-3">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import type { Project } from "@/types";
 
 const layerColors = ["#3b82f6", "#06b6d4", "#10b981", "#f59e0b", "#f97316", "#ef4444", "#8b5cf6", "#ec4899", "#6b7280"];
@@ -15,15 +15,11 @@ export function ArchitectureViewer({ project }: { project: Project }) {
   const arch = project.architecture;
   if (!arch) return null;
 
-  const maxLayer = Math.max(...arch.nodes.map((n) => n.layer));
-  const layerNodes = useMemo(() => {
-    const groups: Record<number, typeof arch.nodes> = {};
-    arch.nodes.forEach((n) => {
-      if (!groups[n.layer]) groups[n.layer] = [];
-      groups[n.layer].push(n);
-    });
-    return Object.entries(groups).sort(([a], [b]) => parseInt(a) - parseInt(b));
-  }, [arch.nodes]);
+  const groups: Record<number, typeof arch.nodes> = {};
+  arch.nodes.forEach((node) => {
+    (groups[node.layer] ??= []).push(node);
+  });
+  const layerNodes = Object.entries(groups).sort(([a], [b]) => parseInt(a) - parseInt(b));
 
   const content = (
     <div className={`p-4 ${fullscreen ? "fixed inset-0 z-50 bg-[#0a0b0e]/95 backdrop-blur-xl flex flex-col" : ""}`}>
@@ -35,7 +31,7 @@ export function ArchitectureViewer({ project }: { project: Project }) {
       )}
       <div className={`overflow-x-auto custom-scrollbar ${fullscreen ? "flex-1 flex items-center justify-center" : ""}`}>
         <div className="relative min-w-[700px]">
-          {layerNodes.map(([layer, nodes], li) => (
+          {layerNodes.map(([layer, nodes]) => (
             <div key={layer} className="flex items-start gap-2 mb-4">
               <div className="flex flex-col items-center w-12 shrink-0 pt-2">
                 <div className="text-xs font-mono text-foreground-tertiary">L{layer}</div>

@@ -3,7 +3,11 @@
 import { useState } from "react";
 import type { Project } from "@/types";
 
-const explainerLabels: Record<string, string> = {
+const explainerKeys = ["quick", "technical", "recruiter", "architecture", "lessons"] as const;
+
+type ExplainerKey = (typeof explainerKeys)[number];
+
+const explainerLabels: Record<ExplainerKey, string> = {
   quick: "Quick Summary (30 sec)",
   technical: "Technical Deep Dive",
   recruiter: "For Recruiters",
@@ -12,7 +16,7 @@ const explainerLabels: Record<string, string> = {
 };
 
 export function AIProjectExplainer({ project }: { project: Project }) {
-  const [activeExp, setActiveExp] = useState("quick");
+  const [activeExp, setActiveExp] = useState<ExplainerKey>("quick");
   const explainers = project.aiExplainers;
   if (!explainers) return null;
 
@@ -23,8 +27,8 @@ export function AIProjectExplainer({ project }: { project: Project }) {
         <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse-glow" />
       </div>
       <div className="flex flex-wrap gap-1 mb-3">
-        {Object.entries(explainerLabels).map(([key, label]) => {
-          if (!(explainers as any)[key]) return null;
+        {explainerKeys.map((key) => {
+          if (!explainers[key]) return null;
           return (
             <button
               key={key}
@@ -33,21 +37,14 @@ export function AIProjectExplainer({ project }: { project: Project }) {
                 activeExp === key ? "bg-purple-500/10 border-purple-500/30 text-purple-400" : "bg-white/5 border-border/40 text-foreground-tertiary hover:text-foreground"
               }`}
             >
-              {label}
+              {explainerLabels[key]}
             </button>
           );
         })}
       </div>
       <div className="p-3 rounded-lg bg-purple-500/[0.03] border border-purple-500/10">
-        <p className="text-xs text-foreground-secondary leading-relaxed">{(explainers as any)[activeExp]}</p>
+        <p className="text-xs text-foreground-secondary leading-relaxed">{explainers[activeExp]}</p>
       </div>
-      {explainers.securityConcepts && activeExp === "securityConcepts" && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {explainers.securityConcepts.map((c: string) => (
-            <span key={c} className="text-xs font-mono text-cyan bg-cyan/10 px-1.5 py-0.5 rounded border border-cyan/20">{c}</span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IconArrowUpRight, IconBrandGithub, IconMail } from "@tabler/icons-react";
+import { CopyButton } from "@/components/portfolio/copy-button";
 import { certifications, profile, skillGroups, timeline } from "@/data/portfolio";
 
 function formatMonth(date: string) {
@@ -125,6 +126,7 @@ export function AboutPage() {
             <IconMail size={15} />
             {profile.email}
           </a>
+          <CopyButton value={profile.email} label="Copy email address" className="h-7 w-7" />
           <a
             href={profile.github}
             target="_blank"

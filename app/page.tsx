@@ -5,6 +5,8 @@ import {
   IconMail,
 } from "@tabler/icons-react";
 import { ProjectCard } from "@/components/portfolio/project-card";
+import { CopyButton } from "@/components/portfolio/copy-button";
+import { GitHubActivity } from "@/components/features/github-activity";
 import { featuredProjects, profile, skillGroups } from "@/data/portfolio";
 
 /**
@@ -108,6 +110,23 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* GitHub activity */}
+      <section id="github" className="border-t border-border/60">
+        <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
+          <div className="mb-6">
+            <h2 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
+              On GitHub
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-foreground-secondary">
+              Public repositories and their descriptions, read from the GitHub API
+              after the page becomes interactive. No contribution counts or
+              streaks are shown because the public API does not provide them.
+            </p>
+          </div>
+          <GitHubActivity profileUrl={profile.github} />
+        </div>
+      </section>
+
       {/* Skills */}
       <section id="skills" className="border-t border-border/60">
         <div className="mx-auto max-w-5xl px-4 py-16 sm:px-6 sm:py-20">
@@ -175,6 +194,7 @@ export default function HomePage() {
                 <IconMail size={15} />
                 {profile.email}
               </a>
+              <CopyButton value={profile.email} label="Copy email address" className="h-7 w-7" />
               <a
                 href={profile.github}
                 target="_blank"

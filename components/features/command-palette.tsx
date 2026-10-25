@@ -1,143 +1,386 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useApp } from "@/lib/store";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  IconHome,
+  IconArrowRight,
+  IconBrandGithub,
   IconCode,
-  IconUser,
+  IconCopy,
+  IconHome,
   IconMail,
   IconSearch,
+  IconShieldExclamation,
+  IconTerminal2,
+  IconUser,
 } from "@tabler/icons-react";
+import { useUIStore } from "@/stores/ui-store";
+import { useToolsStore } from "@/stores/tools-store";
+import { useToastStore } from "@/stores/toast-store";
+import { useDialog } from "@/hooks/use-dialog";
+import { copyText } from "@/lib/clipboard";
+import { normalizeSearchText } from "@/lib/portfolio/project-search";
+import { profile } from "@/data/portfolio";
+import { Kbd } from "@/components/ui/kbd";
+import { cn } from "@/lib/utils";
+
+interface PaletteCommand {
+  id: string;
+  label: string;
+  hint?: string;
+  keywords: string;
+  icon: typeof IconHome;
+  shortcut?: string;
+  run: () => void | Promise<void>;
+}
+
+function openExternal(url: string) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== "https:") return;
+    window.open(parsed.toString(), "_blank", "noopener,noreferrer");
+  } catch {
+    // Invalid URL: do nothing rather than navigating somewhere unexpected.
+  }
+}
 
 /**
- * Command palette (⌘K / Ctrl+K).
+ * Command palette (Ctrl+K / Cmd+K).
  *
- * Only real destinations are listed. The previous version also linked to
- * /skills, /certifications, /resume and /blog — pages whose content is not
- * verified — and offered a "Download Resume" action with no resume behind it.
+ * Every action has a real destination or callback. The palette is only mounted
+ * while open (see AppShell), so its bundle is not part of the initial page.
  */
-const commands = [
-  { id: "home", label: "Go to Home", icon: IconHome, action: "/" },
-  { id: "projects", label: "View Projects", icon: IconCode, action: "/projects" },
-  { id: "about", label: "About", icon: IconUser, action: "/about" },
-  { id: "contact", label: "Get in Touch", icon: IconMail, action: "/contact" },
-  { id: "search", label: "Search Site", icon: IconSearch, action: "search" },
-];
-
 export function CommandPalette() {
-  const app = useApp();
   const router = useRouter();
+  const setCommandPaletteOpen = useUIStore((state) => state.setCommandPaletteOpen);
+  const setSearchOpen = useUIStore((state) => state.setSearchOpen);
+  const setHackerTerminalOpen = useUIStore((state) => state.setHackerTerminalOpen);
+  const openCve = useToolsStore((state) => state.openCve);
+  const addToast = useToastStore((state) => state.addToast);
+
   const [query, setQuery] = useState("");
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const filtered = query
-    ? commands.filter((c) => c.label.toLowerCase().includes(query.toLowerCase()))
-    : commands;
+  const close = useCallback(() => {
+    setCommandPaletteOpen(false);
+  }, [setCommandPaletteOpen]);
 
-  const executeCommand = useCallback(
-    (cmd: (typeof commands)[number]) => {
-      app.setCommandPaletteOpen(false);
-      setQuery("");
-      if (cmd.action === "search") {
-        app.setSearchOpen(true);
-        return;
-      }
-      router.push(cmd.action);
-    },
-    [app, router],
-  );
+  const containerRef = useDialog({
+    open: true,
+    onClose: close,
+    initialFocusRef: inputRef,
+  });
+
+  const commands = useMemo<PaletteCommand[]>(() => {
+    const go = (href: string) => {
+      close();
+      router.push(href);
+    };
+
+    const list: PaletteCommand[] = [
+      {
+        id: "home",
+        label: "Go to Home",
+        hint: "/",
+        keywords: "start index",
+        icon: IconHome,
+        run: () => go("/"),
+      },
+      {
+        id: "projects",
+        label: "View all projects",
+        hint: "/projects",
+        keywords: "work repositories search filter",
+        icon: IconCode,
+        run: () => go("/projects"),
+      },
+      {
+        id: "cyber-intel",
+        label: "Open Cyber Intelligence",
+        hint: "/cyber-intel",
+        keywords: "news archive advisories vulnerabilities feed",
+        icon: IconShieldExclamation,
+        run: () => go("/cyber-intel"),
+      },
+      {
+        id: "about",
+        label: "About",
+        hint: "/about",
+        keywords: "profile background skills timeline",
+        icon: IconUser,
+        run: () => go("/about"),
+      },
+      {
+        id: "contact",
+        label: "Get in touch",
+        hint: "/contact",
+        keywords: "email contact",
+        icon: IconMail,
+        run: () => go("/contact"),
+      },
+      {
+        id: "search",
+        label: "Search this site",
+        hint: "Pages and projects",
+        keywords: "find query",
+        icon: IconSearch,
+        shortcut: "Ctrl /",
+        run: () => {
+          close();
+          setSearchOpen(true);
+        },
+      },
+      {
+        id: "terminal",
+        label: "Open the terminal",
+        hint: "Local interface",
+        keywords: "shell console commands help projects skills",
+        icon: IconTerminal2,
+        run: () => {
+          close();
+          setHackerTerminalOpen(true);
+        },
+      },
+      {
+        id: "cve",
+        label: "Look up a CVE",
+        hint: "NIST NVD",
+        keywords: "vulnerability security advisory cve nvd",
+        icon: IconShieldExclamation,
+        run: () => {
+          close();
+          openCve();
+        },
+      },
+      {
+        id: "github",
+        label: "Open GitHub profile",
+        hint: "github.com",
+        keywords: "code source repositories",
+        icon: IconBrandGithub,
+        run: () => {
+          close();
+          openExternal(profile.github);
+        },
+      },
+      {
+        id: "email",
+        label: "Send an email",
+        hint: profile.email,
+        keywords: "contact mail message",
+        icon: IconMail,
+        run: () => {
+          close();
+          window.location.href = `mailto:${profile.email}`;
+        },
+      },
+      {
+        id: "copy-email",
+        label: "Copy email address",
+        hint: profile.email,
+        keywords: "clipboard contact",
+        icon: IconCopy,
+        run: async () => {
+          close();
+          const result = await copyText(profile.email);
+          addToast({
+            type: result.ok ? "success" : "error",
+            title: result.ok ? "Email copied" : "Could not copy the email",
+            description: result.ok ? profile.email : "Clipboard access was blocked by the browser.",
+          });
+        },
+      },
+    ];
+
+    if (profile.resumeUrl) {
+      list.push({
+        id: "resume",
+        label: "Open résumé",
+        hint: "PDF",
+        keywords: "cv resume",
+        icon: IconArrowRight,
+        run: () => {
+          close();
+          openExternal(profile.resumeUrl);
+        },
+      });
+    }
+
+    return list;
+  }, [addToast, close, openCve, router, setHackerTerminalOpen, setSearchOpen]);
+
+  const filtered = useMemo(() => {
+    const normalized = normalizeSearchText(query);
+    if (!normalized) return commands;
+    const terms = normalized.split(" ").filter(Boolean);
+    return commands.filter((command) => {
+      const haystack = normalizeSearchText(`${command.label} ${command.keywords}`);
+      return terms.every((term) => haystack.includes(term));
+    });
+  }, [commands, query]);
+
+  const active = filtered.length === 0 ? -1 : Math.min(activeIndex, filtered.length - 1);
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!app.commandPaletteOpen) return;
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, filtered.length - 1));
+    if (active < 0) return;
+    document.getElementById(`command-option-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [active]);
+
+  const execute = useCallback(
+    (command: PaletteCommand) => {
+      setQuery("");
+      void command.run();
+    },
+    [],
+  );
+
+  function handleKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      if (filtered.length === 0) return;
+      setActiveIndex((index) => (Math.min(index, filtered.length - 1) + 1) % filtered.length);
+      return;
+    }
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      if (filtered.length === 0) return;
+      setActiveIndex(
+        (index) => (Math.min(index, filtered.length - 1) - 1 + filtered.length) % filtered.length,
+      );
+      return;
+    }
+    if (event.key === "Home") {
+      event.preventDefault();
+      setActiveIndex(0);
+      return;
+    }
+    if (event.key === "End") {
+      event.preventDefault();
+      setActiveIndex(Math.max(0, filtered.length - 1));
+      return;
+    }
+    if (event.key === "Enter") {
+      // A focused option button handles its own Enter through a click.
+      if (event.target instanceof HTMLButtonElement) return;
+      const command = filtered[active];
+      if (command) {
+        event.preventDefault();
+        execute(command);
       }
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedIndex((i) => Math.max(i - 1, 0));
-      }
-      if (e.key === "Enter" && filtered[selectedIndex]) {
-        executeCommand(filtered[selectedIndex]);
-      }
-      if (e.key === "Escape") {
-        app.setCommandPaletteOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [app.commandPaletteOpen, filtered, selectedIndex, executeCommand, app]);
+    }
+  }
 
   return (
-    <AnimatePresence>
-      {app.commandPaletteOpen && (
-        <motion.div
-          className="fixed inset-0 z-[100] flex items-start justify-center pt-[15vh]"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => app.setCommandPaletteOpen(false)}
+    <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[12vh] sm:pt-[15vh]">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={close}
+        aria-hidden="true"
+      />
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="command-palette-title"
+        tabIndex={-1}
+        onKeyDown={handleKeyDown}
+        className="relative w-full max-w-lg overflow-hidden rounded-xl border border-border bg-background shadow-2xl"
+      >
+        <h2 id="command-palette-title" className="sr-only">
+          Command palette
+        </h2>
+
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <IconSearch size={16} className="shrink-0 text-foreground-tertiary" aria-hidden="true" />
+          <label htmlFor="command-palette-input" className="sr-only">
+            Search commands
+          </label>
+          <input
+            ref={inputRef}
+            id="command-palette-input"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActiveIndex(0);
+            }}
+            role="combobox"
+            aria-expanded="true"
+            aria-controls="command-palette-list"
+            aria-autocomplete="list"
+            aria-activedescendant={active >= 0 ? `command-option-${active}` : undefined}
+            placeholder="Type a command or page…"
+            autoComplete="off"
+            spellCheck={false}
+            className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-tertiary"
           />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-label="Command palette"
-            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl"
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <div className="flex items-center gap-3 border-b border-border/60 p-4">
-              <IconSearch size={16} className="shrink-0 text-foreground-tertiary" />
-              <input
-                autoFocus
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setSelectedIndex(0);
-                }}
-                placeholder="Go to…"
-                aria-label="Go to a page"
-                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-tertiary"
-              />
-              <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-foreground-tertiary">
-                ESC
-              </kbd>
+          <Kbd>Esc</Kbd>
+        </div>
+
+        <div
+          id="command-palette-list"
+          role="listbox"
+          aria-label="Commands"
+          className="max-h-[min(60vh,22rem)] overflow-y-auto p-2"
+        >
+          {filtered.map((command, index) => {
+            const Icon = command.icon;
+            return (
+              <button
+                key={command.id}
+                id={`command-option-${index}`}
+                type="button"
+                role="option"
+                aria-selected={index === active}
+                tabIndex={-1}
+                onMouseMove={() => setActiveIndex(index)}
+                onClick={() => execute(command)}
+                className={cn(
+                  "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
+                  index === active
+                    ? "bg-accent-soft text-accent"
+                    : "text-foreground-secondary hover:bg-white/[0.04]",
+                )}
+              >
+                <Icon size={16} className="shrink-0" aria-hidden="true" />
+                <span className="min-w-0 flex-1 truncate">{command.label}</span>
+                {command.hint && (
+                  <span className="hidden shrink-0 text-xs text-foreground-tertiary sm:inline">
+                    {command.hint}
+                  </span>
+                )}
+                {command.shortcut && <Kbd className="shrink-0">{command.shortcut}</Kbd>}
+              </button>
+            );
+          })}
+
+          {filtered.length === 0 && (
+            <div role="status" className="px-3 py-8 text-center">
+              <p className="text-sm text-foreground-secondary">
+                No commands match &ldquo;{query}&rdquo;.
+              </p>
+              <p className="mt-1 text-xs text-foreground-tertiary">
+                Try &ldquo;projects&rdquo;, &ldquo;terminal&rdquo; or &ldquo;cve&rdquo;.
+              </p>
             </div>
-            <div className="max-h-64 overflow-y-auto p-2">
-              {filtered.map((cmd, i) => (
-                <button
-                  key={cmd.id}
-                  type="button"
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
-                    i === selectedIndex
-                      ? "bg-accent-soft text-accent"
-                      : "text-foreground-secondary hover:bg-white/5"
-                  }`}
-                  onClick={() => executeCommand(cmd)}
-                  onMouseEnter={() => setSelectedIndex(i)}
-                >
-                  <cmd.icon size={16} />
-                  <span>{cmd.label}</span>
-                </button>
-              ))}
-              {filtered.length === 0 && (
-                <div className="px-3 py-8 text-center text-sm text-foreground-tertiary">
-                  No results found
-                </div>
-              )}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2.5 text-xs text-foreground-tertiary">
+          <span className="flex items-center gap-1.5">
+            <Kbd>↑</Kbd>
+            <Kbd>↓</Kbd>
+            navigate
+            <span aria-hidden="true">·</span>
+            <Kbd>Enter</Kbd>
+            select
+            <span aria-hidden="true">·</span>
+            <Kbd>Esc</Kbd>
+            close
+          </span>
+          <span className="hidden sm:inline">Ctrl K / ⌘ K</span>
+        </div>
+      </div>
+    </div>
   );
 }
