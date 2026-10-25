@@ -270,7 +270,79 @@ stack traces.
 
 ---
 
-## 7. Security
+## 7. Archive UI (`/cyber-intel`)
+
+The page is one client shell (`modules/cyber-intel/cyber-intel-page.tsx`) over
+the read API. It never contacts a publisher; every control re-queries
+`/api/cyber-intel`, so the browser only ever sees archived records. The 3D globe
+is a separate `dynamic(..., { ssr: false })` chunk and is not required for the
+archive to work.
+
+### URL parameters
+
+Filters live in the address bar so a view can be bookmarked, reloaded or shared.
+The server parses the same parameters, which means the first HTML response
+already contains the filtered feed.
+
+| Param | Meaning | Example |
+| --- | --- | --- |
+| `q` | free text over headline, summary, publisher, country, identifiers | `q=UEFI` |
+| `category` | comma-separated category ids | `category=vulnerability,exploit` |
+| `source` | one publisher/source id | `source=cisa-kev` |
+| `country` | ISO alpha-2, only source-reported countries | `country=IN` |
+| `from`, `to` | `YYYY-MM-DD`, inclusive, expanded to the whole UTC day | `from=2026-10-01` |
+| `located` | `yes` \| `no` — record has or lacks a reported country | `located=no` |
+| `sort` | `newest` (default) \| `oldest` | `sort=oldest` |
+| `item` | opens one report in the detail panel | `item=ci-15u7nsf` |
+
+Defaults are omitted from the URL. Unknown values are dropped rather than
+forwarded to the API, so a hand-edited link cannot produce a 400. Filters are
+written with `history.replaceState` (no server round-trip per keystroke) and
+`popstate` re-reads the URL, so Back/Forward restore the previous view.
+
+`item` is resolved on the server with `getRepository().getItem()` +
+`relatedItems()`, so a deep link renders the report even when it is not on the
+first page of the filtered feed. If the record is not in the current page, the
+panel falls back to `GET /api/cyber-intel/{id}` and caches the result in memory.
+Opening or closing a report never clears the filters.
+
+### Behaviour
+
+* **Search** — 250 ms debounce; the in-flight request is aborted when the query
+  changes, and a request id guards against out-of-order responses.
+* **Paging** — "Load 20 more" appends the next page and de-duplicates by id.
+  Responses are cached per query string for 60 s, and a filter change aborts a
+  pending page request. The archive is never loaded into the browser at once.
+* **Dates** — publication, advisory and catalogue dates are separate fields and
+  are labelled as such (`Published`, `Advisory issued`, `Added to catalogue`,
+  `Claim recorded`). Incident dates are shown separately and are never used as a
+  fallback. Missing dates render as "not stated".
+* **Regions** — there is no region filter. Sources report countries only, so
+  region- or city-level filtering would require inference; the method panel says
+  so and unlocated records are labelled.
+* **States** — skeleton while the first page loads, a progress bar while a
+  filtered request is in flight, a distinct message for "no results for these
+  filters" versus "the archive is empty", an error banner that keeps the
+  previously loaded results and offers *Try again*, and a stale banner driven by
+  `meta.freshness` (no successful refresh for six hours). An inverted custom
+  range is reported inline and marks both date inputs `aria-invalid`.
+* **Accessibility** — toggles use `aria-pressed`, the panel trigger uses
+  `aria-expanded`/`aria-controls`, results are announced through `aria-live`,
+  Escape closes the panel and returns focus to the control that opened it, and
+  all animations are disabled under `prefers-reduced-motion`.
+
+### Data honesty
+
+The UI only renders fields that came from a source: `geo` is null unless a
+structured country field was present, `publishedAtKind` records which date the
+source actually supplied, and leak-site entries carry an `attribution` label so
+a claim is never presented as a confirmed incident. Source and publication
+timestamp stay visible on every card and in the detail panel, and every record
+links to the publisher.
+
+---
+
+## 8. Security
 
 * **SSRF**: `lib/cyber-intel/security.ts` speaks HTTPS only, contacts only the
   calling source's host allowlist, resolves DNS itself and rejects private,
@@ -293,7 +365,7 @@ stack traces.
 
 ---
 
-## 8. Retention and failure handling
+## 9. Retention and failure handling
 
 * `MAX_AGE_DAYS = 3650` and `MAX_RETAINED = 3000`. Pruning runs after every
   successful run; the archive is bounded by count, not silently by age.
@@ -308,7 +380,7 @@ stack traces.
 
 ---
 
-## 9. Tests
+## 10. Tests
 
 ```bash
 npm test
@@ -332,10 +404,15 @@ npm test
   constant-time token comparison.
 * `ingest.test.ts` — RSS, KEV, NVD, CERT-In HTML and ransomware.live payloads,
   304 handling, HTML-error detection, caps and malformed payloads.
+* `filters.test.ts` — archive URL parameters: category/source/country/date
+  validation, round-tripping the URL, the API query string, inverted ranges and
+  quick-range day arithmetic.
+* `freshness.test.ts` — the six-hour staleness rule, empty archives and
+  unparsable timestamps.
 
 ---
 
-## 10. Operations
+## 11. Operations
 
 * Is the archive healthy? `GET /api/cyber-intel/sources` → `storage.durable`,
   `lastRun.status`, each source's `lastSuccessAt` / `consecutiveFailures`.

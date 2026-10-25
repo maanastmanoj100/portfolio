@@ -7,6 +7,7 @@ import {
   IconArrowUpRight,
   IconCalendar,
   IconChevronDown,
+  IconClock,
   IconDatabase,
   IconFilter,
   IconGlobe,
@@ -21,10 +22,21 @@ import {
   CATEGORY_ORDER,
   type GeoCluster,
   type IntelCategory,
+  type IntelDetail,
   type IntelItem,
   type IntelSnapshot,
   type SourceHealth,
 } from "@/lib/cyber-intel/types";
+import {
+  EMPTY_ARCHIVE_FILTERS,
+  dayBefore,
+  filtersFromSearchParams,
+  filtersToApiQuery,
+  filtersToSearchParams,
+  hasNarrowingFilters,
+  isDateRangeInverted,
+  type ArchiveFilters as Filters,
+} from "@/lib/cyber-intel/filters";
 
 /**
  * Client shell for /cyber-intel.
@@ -76,47 +88,25 @@ const PUBLISHED_LABEL: Record<IntelItem["publishedAtKind"], string> = {
   aggregator: "Claim recorded",
 };
 
+/** Compact label used in the feed, where space is tight but the meaning matters. */
+const PUBLISHED_SHORT: Record<IntelItem["publishedAtKind"], string> = {
+  article: "Published",
+  advisory: "Advisory",
+  catalog: "Catalogue date",
+  aggregator: "Claim recorded",
+};
+
 const PUBLISHED_NOTE: Partial<Record<IntelItem["publishedAtKind"], string>> = {
   catalog: "This is the date the catalogue added the entry, not the vulnerability's disclosure date.",
   aggregator:
     "This is when the aggregator recorded the claim. The claimed attack date is shown separately where the source provides one.",
 };
 
-interface Filters {
-  q: string;
-  categories: IntelCategory[];
-  source: string;
-  country: string;
-  from: string;
-  to: string;
-  located: "" | "yes" | "no";
-  sort: "newest" | "oldest";
-}
-
-const INITIAL_FILTERS: Filters = {
-  q: "",
-  categories: [],
-  source: "",
-  country: "",
-  from: "",
-  to: "",
-  located: "",
-  sort: "newest",
-};
-
-function toQueryString(filters: Filters): string {
-  const params = new URLSearchParams();
-  if (filters.q.trim()) params.set("q", filters.q.trim());
-  if (filters.categories.length) params.set("category", filters.categories.join(","));
-  if (filters.source) params.set("source", filters.source);
-  if (filters.country) params.set("country", filters.country);
-  if (filters.from) params.set("from", filters.from);
-  if (filters.to) params.set("to", filters.to);
-  if (filters.located) params.set("located", filters.located);
-  if (filters.sort !== "newest") params.set("sort", filters.sort);
-  params.set("pageSize", String(PAGE_SIZE));
-  return params.toString();
-}
+const MONTHS = Array.from({ length: 12 }, (_, index) =>
+  new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" }).format(
+    new Date(Date.UTC(2026, index, 1)),
+  ),
+);
 
 function categoryMeta(category: IntelCategory) {
   return CATEGORIES[category];
@@ -181,7 +171,17 @@ function DetailRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ArticleDetail({ item, onClose }: { item: IntelItem; onClose: () => void }) {
+function ArticleDetail({
+  item,
+  related,
+  onClose,
+  onSelectRelated,
+}: {
+  item: IntelItem;
+  related: IntelItem[];
+  onClose: () => void;
+  onSelectRelated: (id: string) => void;
+}) {
   return (
     <div className="p-4">
       <div className="flex items-start justify-between gap-3">
@@ -190,7 +190,7 @@ function ArticleDetail({ item, onClose }: { item: IntelItem; onClose: () => void
           type="button"
           onClick={onClose}
           aria-label="Close report details"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--color-foreground-tertiary)] transition-colors hover:bg-white/5 hover:text-[var(--color-foreground)]"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-[var(--color-foreground-tertiary)] transition-colors hover:bg-white/5 hover:text-[var(--color-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
         >
           <IconX size={15} />
         </button>
@@ -285,6 +285,30 @@ function ArticleDetail({ item, onClose }: { item: IntelItem; onClose: () => void
               {tag}
             </span>
           ))}
+        </div>
+      )}
+
+      {related.length > 0 && (
+        <div className="mt-4">
+          <div className="text-[11px] uppercase tracking-wide text-[var(--color-foreground-tertiary)]">
+            Related in the archive
+          </div>
+          <ul className="mt-1.5 space-y-1">
+            {related.map((entry) => (
+              <li key={entry.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectRelated(entry.id)}
+                  className="w-full rounded-md px-2 py-1.5 text-left text-xs text-[var(--color-foreground-secondary)] transition-colors hover:bg-white/[0.04] hover:text-[var(--color-foreground)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
+                >
+                  <span className="line-clamp-2">{entry.title}</span>
+                  <span className="mt-0.5 block font-mono text-[10px] text-[var(--color-foreground-tertiary)]">
+                    {entry.sourceName} · {formatDate(entry.publishedAt)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
@@ -415,8 +439,13 @@ function MethodPanel() {
           affected organisation&apos;s country, not the group&apos;s.
         </li>
         <li>
+          <span className="text-[var(--color-foreground)]">Country, not region.</span> Sources report countries only,
+          so there is no region or city filter and no location is inferred from a headline. Records without a
+          reported country are marked unlocated.
+        </li>
+        <li>
           <span className="text-[var(--color-foreground)]">Dates are separate.</span> Publication, incident and
-          advisory dates are shown only when the source states them, all in UTC.
+          advisory dates are shown only when the source states them, all in UTC. A record with no date says so.
         </li>
         <li>
           <span className="text-[var(--color-foreground)]">Keyboard.</span> Focus the map and use the arrow keys
@@ -461,10 +490,10 @@ function FeedItem({
         </span>
         <time
           dateTime={item.publishedAt ?? undefined}
-          title={PUBLISHED_LABEL[item.publishedAtKind]}
+          title={`${PUBLISHED_LABEL[item.publishedAtKind]}${item.publishedAt ? "" : " (the source states no date)"}`}
           className="font-mono text-[11px] text-[var(--color-foreground-tertiary)]"
         >
-          {formatDate(item.publishedAt)}
+          {PUBLISHED_SHORT[item.publishedAtKind]} {formatDate(item.publishedAt)}
         </time>
         {item.geo && (
           <span className="inline-flex items-center gap-1 rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[10px] text-[var(--color-foreground-secondary)]">
@@ -477,6 +506,11 @@ function FeedItem({
             claim
           </span>
         )}
+        {item.advisoryAt && item.advisoryAt !== item.publishedAt && (
+          <span className="font-mono text-[10px] text-[var(--color-foreground-tertiary)]">
+            advisory {formatDate(item.advisoryAt)}
+          </span>
+        )}
         {item.incidentAt && item.incidentAt !== item.publishedAt && (
           <span className="font-mono text-[10px] text-[var(--color-foreground-tertiary)]">
             incident {formatDate(item.incidentAt)}
@@ -484,7 +518,13 @@ function FeedItem({
         )}
       </div>
 
-      <button type="button" onClick={onSelect} className="mt-1.5 block w-full text-left">
+      <button
+        type="button"
+        onClick={onSelect}
+        aria-expanded={selected}
+        aria-controls="intel-detail"
+        className="mt-1.5 block w-full text-left"
+      >
         <h3 className="text-sm font-medium leading-snug text-[var(--color-foreground)]">{item.title}</h3>
         {item.summary && (
           <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--color-foreground-secondary)]">
@@ -497,9 +537,11 @@ function FeedItem({
         <button
           type="button"
           onClick={onSelect}
+          aria-expanded={selected}
+          aria-controls="intel-detail"
           className="text-[11px] text-[var(--color-foreground-tertiary)] transition-colors hover:text-[var(--color-accent)]"
         >
-          Details
+          {selected ? "Hide details" : "Details"}
         </button>
         <a
           href={item.url}
@@ -519,7 +561,7 @@ function FeedSkeleton() {
   return (
     <div className="divide-y divide-[var(--color-border)]" aria-hidden="true">
       {Array.from({ length: 5 }).map((_, index) => (
-        <div key={index} className="animate-pulse px-4 py-4">
+        <div key={index} className="animate-pulse px-4 py-4 motion-reduce:animate-none">
           <div className="h-2.5 w-40 rounded bg-white/[0.06]" />
           <div className="mt-3 h-3 w-4/5 rounded bg-white/[0.07]" />
           <div className="mt-2 h-2.5 w-full rounded bg-white/[0.05]" />
@@ -530,31 +572,81 @@ function FeedSkeleton() {
   );
 }
 
+function DetailSkeleton() {
+  return (
+    <div className="p-4" aria-hidden="true">
+      <div className="h-4 w-24 animate-pulse rounded bg-white/[0.07] motion-reduce:animate-none" />
+      <div className="mt-4 h-3 w-4/5 animate-pulse rounded bg-white/[0.07] motion-reduce:animate-none" />
+      <div className="mt-2 h-2.5 w-full animate-pulse rounded bg-white/[0.05] motion-reduce:animate-none" />
+      <div className="mt-1.5 h-2.5 w-3/4 animate-pulse rounded bg-white/[0.05] motion-reduce:animate-none" />
+      <div className="mt-4 h-2.5 w-1/2 animate-pulse rounded bg-white/[0.05] motion-reduce:animate-none" />
+    </div>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Page                                                                */
 /* ------------------------------------------------------------------ */
 
-export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
-  const [filters, setFilters] = useState<Filters>(INITIAL_FILTERS);
+function mergeItems(current: IntelItem[], incoming: IntelItem[]): IntelItem[] {
+  const seen = new Set(current.map((item) => item.id));
+  return [...current, ...incoming.filter((item) => !seen.has(item.id))];
+}
+
+const ITEM_PATTERN = /^ci-[a-z0-9]{1,24}$/;
+
+export function CyberIntelPage({
+  initial,
+  initialFilters,
+  initialItemId,
+  initialDetail,
+}: {
+  initial: IntelSnapshot;
+  initialFilters: string;
+  initialItemId: string | null;
+  initialDetail: IntelDetail | null;
+}) {
+  const [filters, setFilters] = useState<Filters>(() =>
+    filtersFromSearchParams(new URLSearchParams(initialFilters)),
+  );
   const [snapshot, setSnapshot] = useState<IntelSnapshot>(initial);
   const [items, setItems] = useState<IntelItem[]>(initial.items);
   const [page, setPage] = useState(1);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [loadingMore, setLoadingMore] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(initialItemId);
+  const [detail, setDetail] = useState<IntelItem | null>(initialDetail?.item ?? null);
+  const [related, setRelated] = useState<IntelItem[]>(initialDetail?.related ?? []);
+  const [detailStatus, setDetailStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [detailError, setDetailError] = useState("");
+  const [detailRetryToken, setDetailRetryToken] = useState(0);
   const [refreshToken, setRefreshToken] = useState(0);
 
-  const queryString = useMemo(() => toQueryString(filters), [filters]);
+  const queryString = useMemo(() => filtersToApiQuery(filters, PAGE_SIZE), [filters]);
   const cache = useRef(new Map<string, { at: number; snapshot: IntelSnapshot }>());
+  const [detailCache] = useState(() => {
+    const map = new Map<string, IntelDetail>();
+    if (initialDetail) map.set(initialDetail.item.id, initialDetail);
+    return map;
+  });
   const requestId = useRef(0);
   const skipInitial = useRef(initial.items.length > 0);
+  const loadMoreController = useRef<AbortController | null>(null);
+  const detailController = useRef<AbortController | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
+  const lastTrigger = useRef<HTMLElement | null>(null);
+  const shouldFocusPanel = useRef(false);
 
   useEffect(() => {
     if (skipInitial.current) {
       skipInitial.current = false;
       return;
     }
+
+    // A new filter invalidates any in-flight "load more" page.
+    loadMoreController.current?.abort();
+    setLoadingMore(false);
 
     const cached = cache.current.get(queryString);
     if (cached && Date.now() - cached.at < CLIENT_CACHE_MS) {
@@ -594,6 +686,131 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
     };
   }, [queryString, refreshToken]);
 
+  useEffect(
+    () => () => {
+      loadMoreController.current?.abort();
+      detailController.current?.abort();
+    },
+    [],
+  );
+
+  /**
+   * The detail panel is resolved separately from the feed page. A deep link can
+   * name a record that is not in the current 20-item window, so the panel asks
+   * `/api/cyber-intel/{id}` instead of requiring the whole archive in memory.
+   *
+   * State is only written from the async callback (and from the event handlers
+   * that open or close the panel). The cached record is read during render, so
+   * switching between already-opened reports does not cascade renders.
+   */
+  useEffect(() => {
+    if (!selectedId) return;
+    if (items.some((item) => item.id === selectedId)) return;
+    if (detailCache.has(selectedId)) return;
+
+    detailController.current?.abort();
+    const controller = new AbortController();
+    detailController.current = controller;
+
+    void (async () => {
+      try {
+        const response = await fetch(`/api/cyber-intel/${encodeURIComponent(selectedId)}`, {
+          signal: controller.signal,
+        });
+        if (response.status === 404) {
+          throw new Error("This report is no longer in the archive. It may have been pruned.");
+        }
+        if (!response.ok) throw new Error(`Request failed (${response.status})`);
+        const payload = (await response.json()) as IntelDetail;
+        if (controller.signal.aborted) return;
+        detailCache.set(selectedId, payload);
+        setDetail(payload.item);
+        setRelated(payload.related);
+        setDetailStatus("idle");
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setDetailStatus("error");
+        setDetailError(error instanceof Error ? error.message : "Request failed");
+      }
+    })();
+
+    return () => controller.abort();
+  }, [selectedId, items, detailRetryToken, detailCache]);
+
+  // Keep filters and the open report in the address bar without a server
+  // round-trip for every keystroke. Reloads and shared links still restore the
+  // same view, because the page renders the snapshot from the same parameters.
+  useEffect(() => {
+    const params = filtersToSearchParams(filters);
+    if (selectedId) params.set("item", selectedId);
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}`;
+    if (`${window.location.pathname}${window.location.search}` !== next) {
+      window.history.replaceState(null, "", next);
+    }
+  }, [filters, selectedId]);
+
+  // Back/forward (including bfcache restores) re-reads the URL rather than
+  // trusting component state that may predate the navigation.
+  useEffect(() => {
+    const onPopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      setFilters(filtersFromSearchParams(params));
+      const item = params.get("item");
+      setDetailStatus("idle");
+      setDetailError("");
+      setSelectedId(item && ITEM_PATTERN.test(item) ? item : null);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  const closeDetail = useCallback(() => {
+    setSelectedId(null);
+    setDetailStatus("idle");
+    setDetailError("");
+    const trigger = lastTrigger.current;
+    lastTrigger.current = null;
+    // Returning focus to the control that opened the panel keeps keyboard
+    // navigation in place instead of dropping the user at the top of the page.
+    window.requestAnimationFrame(() => trigger?.focus());
+  }, []);
+
+  const openDetail = useCallback(
+    (id: string) => {
+      if (selectedId === id) {
+        closeDetail();
+        return;
+      }
+      shouldFocusPanel.current = true;
+      lastTrigger.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      setDetailStatus("idle");
+      setDetailError("");
+      setSelectedId(id);
+    },
+    [selectedId, closeDetail],
+  );
+
+  useEffect(() => {
+    if (selectedId && shouldFocusPanel.current) {
+      shouldFocusPanel.current = false;
+      panelRef.current?.focus();
+    }
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        closeDetail();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [selectedId, closeDetail]);
+
   const update = useCallback((patch: Partial<Filters>) => {
     setFilters((current) => ({ ...current, ...patch }));
     setSelectedId(null);
@@ -615,11 +832,12 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
   }, []);
 
   const resetFilters = useCallback(() => {
-    setFilters(INITIAL_FILTERS);
+    setFilters(EMPTY_ARCHIVE_FILTERS);
     setSelectedId(null);
   }, []);
 
   const applyRange = useCallback((days: number | null) => {
+    setSelectedId(null);
     if (days === null) {
       setFilters((current) => ({ ...current, from: "", to: "" }));
       return;
@@ -630,31 +848,61 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !snapshot.hasMore) return;
+    const nextPage = page + 1;
+    const cacheKey = `${queryString}#${nextPage}`;
     setLoadingMore(true);
+
+    const cached = cache.current.get(cacheKey);
+    if (cached && Date.now() - cached.at < CLIENT_CACHE_MS) {
+      setItems((current) => mergeItems(current, cached.snapshot.items));
+      setSnapshot((current) => ({ ...cached.snapshot, items: current.items }));
+      setPage(nextPage);
+      setLoadingMore(false);
+      return;
+    }
+
+    loadMoreController.current?.abort();
+    const controller = new AbortController();
+    loadMoreController.current = controller;
+
     try {
       const params = new URLSearchParams(queryString);
-      params.set("page", String(page + 1));
-      const response = await fetch(`/api/cyber-intel?${params.toString()}`);
+      params.set("page", String(nextPage));
+      const response = await fetch(`/api/cyber-intel?${params.toString()}`, {
+        signal: controller.signal,
+      });
       if (!response.ok) throw new Error(`Request failed (${response.status})`);
       const next = (await response.json()) as IntelSnapshot;
-      setItems((current) => {
-        const seen = new Set(current.map((item) => item.id));
-        return [...current, ...next.items.filter((item) => !seen.has(item.id))];
-      });
+      if (controller.signal.aborted) return;
+      cache.current.set(cacheKey, { at: Date.now(), snapshot: next });
+      setItems((current) => mergeItems(current, next.items));
       setSnapshot((current) => ({ ...next, items: current.items }));
-      setPage((current) => current + 1);
+      setPage(nextPage);
     } catch (error) {
+      if (controller.signal.aborted) return;
       setStatus("error");
       setErrorMessage(error instanceof Error ? error.message : "Request failed");
     } finally {
-      setLoadingMore(false);
+      if (loadMoreController.current === controller) {
+        loadMoreController.current = null;
+        setLoadingMore(false);
+      }
     }
-  }, [loadingMore, snapshot.hasMore, queryString, page]);
+  }, [loadingMore, snapshot.hasMore, page, queryString]);
 
-  const selectedItem = useMemo(
-    () => items.find((item) => item.id === selectedId) ?? null,
-    [items, selectedId],
-  );
+  const selectedItem = useMemo(() => {
+    if (!selectedId) return null;
+    const inList = items.find((item) => item.id === selectedId);
+    if (inList) return inList;
+    if (detail?.id === selectedId) return detail;
+    return detailCache.get(selectedId)?.item ?? null;
+  }, [items, detail, detailCache, selectedId]);
+  const selectedRelated =
+    detail?.id === selectedId
+      ? related
+      : selectedId
+        ? (detailCache.get(selectedId)?.related ?? [])
+        : [];
   const activeCluster = useMemo(
     () => snapshot.geo.find((cluster) => cluster.countryCode === filters.country) ?? null,
     [snapshot.geo, filters.country],
@@ -678,8 +926,34 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
       : "";
   const monthValue =
     yearValue && filters.from.slice(5, 7) === filters.to.slice(5, 7) ? filters.from.slice(5, 7) : "";
+  const dateRangeInverted = isDateRangeInverted(filters);
+  const hasFilters = hasNarrowingFilters(filters);
+  const archiveEmpty = snapshot.meta.archive.count === 0 && snapshot.total === 0;
+
+  const quickRanges = [
+    { label: "24h", days: 1 },
+    { label: "7d", days: 7 },
+    { label: "30d", days: 30 },
+    { label: "90d", days: 90 },
+  ];
+  const activeQuickRange =
+    !filters.from && !filters.to
+      ? "All"
+      : !filters.to
+        ? (quickRanges.find(
+            (range) => filters.from === dayBefore(snapshot.meta.generatedAt, range.days),
+          )?.label ?? null)
+        : null;
+
+  const yearOptions = snapshot.facets.years;
+  const selectedSourceName =
+    snapshot.meta.sources.find((source) => source.id === filters.source)?.name ?? filters.source;
+  const selectedCountryName =
+    snapshot.facets.countries.find((country) => country.code === filters.country)?.name ??
+    filters.country;
 
   const applyYear = (year: string) => {
+    setSelectedId(null);
     if (!year) {
       setFilters((current) => ({ ...current, from: "", to: "" }));
       return;
@@ -688,8 +962,10 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
   };
 
   const applyMonth = (month: string) => {
-    if (!yearValue || !month) {
-      applyYear(yearValue || "");
+    setSelectedId(null);
+    if (!yearValue) return;
+    if (!month) {
+      setFilters((current) => ({ ...current, from: `${yearValue}-01-01`, to: `${yearValue}-12-31` }));
       return;
     }
     const lastDay = new Date(Date.UTC(Number(yearValue), Number(month), 0)).getUTCDate();
@@ -763,28 +1039,40 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                   type="search"
                   value={filters.q}
                   onChange={(event) => update({ q: event.target.value })}
-                  placeholder="Search headlines, identifiers, countries, CVE ids…"
+                  placeholder="Search headlines, summaries, publishers, CVE ids…"
+                  maxLength={120}
+                  autoComplete="off"
+                  spellCheck={false}
+                  aria-describedby="intel-search-hint"
                   className="h-10 w-full rounded-md border border-[var(--color-border)] bg-black/20 pl-9 pr-3 text-sm text-[var(--color-foreground)] placeholder:text-[var(--color-foreground-tertiary)] focus:border-[var(--color-accent-border)] focus:outline-none"
                 />
+                <span id="intel-search-hint" className="sr-only">
+                  Searches headlines, summaries, publishers, countries and vulnerability identifiers in the stored
+                  archive. Results update after a short pause.
+                </span>
               </div>
 
               <div className="flex gap-2">
                 <div className="relative">
                   <label htmlFor="intel-source" className="sr-only">
-                    Filter by source
+                    Filter by publisher
                   </label>
                   <select
                     id="intel-source"
                     value={filters.source}
                     onChange={(event) => update({ source: event.target.value })}
+                    title="Publisher or feed that supplied the record"
                     className="h-10 w-full appearance-none rounded-md border border-[var(--color-border)] bg-black/20 pl-3 pr-8 text-xs text-[var(--color-foreground-secondary)] focus:border-[var(--color-accent-border)] focus:outline-none sm:w-48"
                   >
-                    <option value="">All sources</option>
+                    <option value="">All publishers</option>
                     {snapshot.facets.sources.map((source) => (
                       <option key={source.id} value={source.id}>
                         {source.name} ({source.count})
                       </option>
                     ))}
+                    {filters.source && !snapshot.facets.sources.some((source) => source.id === filters.source) && (
+                      <option value={filters.source}>{selectedSourceName} (0)</option>
+                    )}
                   </select>
                   <IconChevronDown
                     size={13}
@@ -794,12 +1082,13 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
 
                 <div className="relative">
                   <label htmlFor="intel-country" className="sr-only">
-                    Filter by country
+                    Filter by reported victim country
                   </label>
                   <select
                     id="intel-country"
                     value={filters.country}
                     onChange={(event) => setCountry(event.target.value || null)}
+                    title="Only countries reported in a structured field are listed. Regions are not inferred."
                     className="h-10 w-full appearance-none rounded-md border border-[var(--color-border)] bg-black/20 pl-3 pr-8 text-xs text-[var(--color-foreground-secondary)] focus:border-[var(--color-accent-border)] focus:outline-none sm:w-44"
                   >
                     <option value="">All countries</option>
@@ -808,6 +1097,10 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                         {country.name} ({country.count})
                       </option>
                     ))}
+                    {filters.country &&
+                      !snapshot.facets.countries.some((country) => country.code === filters.country) && (
+                        <option value={filters.country}>{selectedCountryName} (0)</option>
+                      )}
                   </select>
                   <IconChevronDown
                     size={13}
@@ -847,7 +1140,7 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
             </div>
 
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-[var(--color-border)] pt-3">
-              <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-1.5">
                 <IconCalendar size={12} className="text-[var(--color-foreground-tertiary)]" />
                 <label htmlFor="intel-from" className="text-[10px] uppercase tracking-wide text-[var(--color-foreground-tertiary)]">
                   From
@@ -856,7 +1149,8 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                   id="intel-from"
                   type="date"
                   value={formatDay(filters.from)}
-                  onChange={(event) => update({ from: event.target.value, to: filters.to })}
+                  aria-invalid={dateRangeInverted || undefined}
+                  onChange={(event) => update({ from: event.target.value })}
                   className="h-8 rounded border border-[var(--color-border)] bg-black/20 px-2 text-[11px] text-[var(--color-foreground-secondary)] focus:border-[var(--color-accent-border)] focus:outline-none"
                 />
                 <label htmlFor="intel-to" className="text-[10px] uppercase tracking-wide text-[var(--color-foreground-tertiary)]">
@@ -866,33 +1160,48 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                   id="intel-to"
                   type="date"
                   value={formatDay(filters.to)}
+                  aria-invalid={dateRangeInverted || undefined}
                   onChange={(event) => update({ to: event.target.value })}
                   className="h-8 rounded border border-[var(--color-border)] bg-black/20 px-2 text-[11px] text-[var(--color-foreground-secondary)] focus:border-[var(--color-accent-border)] focus:outline-none"
                 />
               </div>
 
               <div className="flex items-center gap-1" role="group" aria-label="Quick date ranges">
-                {[
-                  { label: "24h", days: 1 },
-                  { label: "7d", days: 7 },
-                  { label: "30d", days: 30 },
-                  { label: "90d", days: 90 },
-                  { label: "All", days: null },
-                ].map((range) => (
-                  <button
-                    key={range.label}
-                    type="button"
-                    onClick={() => applyRange(range.days)}
-                    className="rounded border border-[var(--color-border)] px-2 py-1 text-[10px] text-[var(--color-foreground-secondary)] transition-colors hover:border-[var(--color-border-hover)] hover:text-[var(--color-foreground)]"
-                  >
-                    {range.label}
-                  </button>
-                ))}
+                {quickRanges.map((range) => {
+                  const active = activeQuickRange === range.label;
+                  return (
+                    <button
+                      key={range.label}
+                      type="button"
+                      onClick={() => applyRange(range.days)}
+                      aria-pressed={active}
+                      className={`rounded border px-2 py-1 text-[10px] transition-colors ${
+                        active
+                          ? "border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
+                          : "border-[var(--color-border)] text-[var(--color-foreground-secondary)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-foreground)]"
+                      }`}
+                    >
+                      {range.label}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => applyRange(null)}
+                  aria-pressed={activeQuickRange === "All"}
+                  className={`rounded border px-2 py-1 text-[10px] transition-colors ${
+                    activeQuickRange === "All"
+                      ? "border-[var(--color-accent-border)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]"
+                      : "border-[var(--color-border)] text-[var(--color-foreground-secondary)] hover:border-[var(--color-border-hover)] hover:text-[var(--color-foreground)]"
+                  }`}
+                >
+                  All
+                </button>
               </div>
 
               <div className="flex items-center gap-1.5">
                 <label htmlFor="intel-year" className="text-[10px] uppercase tracking-wide text-[var(--color-foreground-tertiary)]">
-                  Archive
+                  Year
                 </label>
                 <select
                   id="intel-year"
@@ -901,25 +1210,31 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                   className="h-8 rounded border border-[var(--color-border)] bg-black/20 px-2 text-[11px] text-[var(--color-foreground-secondary)] focus:border-[var(--color-accent-border)] focus:outline-none"
                 >
                   <option value="">All years</option>
-                  {snapshot.facets.years.map((year) => (
+                  {yearOptions.map((year) => (
                     <option key={year.year} value={String(year.year)}>
                       {year.year} ({year.count})
                     </option>
                   ))}
+                  {yearValue && !yearOptions.some((year) => String(year.year) === yearValue) && (
+                    <option value={yearValue}>{yearValue} (0)</option>
+                  )}
                 </select>
+                <label htmlFor="intel-month" className="sr-only">
+                  Filter by month
+                </label>
                 <select
-                  aria-label="Filter by month"
+                  id="intel-month"
                   value={monthValue}
                   disabled={!yearValue}
                   onChange={(event) => applyMonth(event.target.value)}
                   className="h-8 rounded border border-[var(--color-border)] bg-black/20 px-2 text-[11px] text-[var(--color-foreground-secondary)] disabled:opacity-40 focus:border-[var(--color-accent-border)] focus:outline-none"
                 >
                   <option value="">All months</option>
-                  {Array.from({ length: 12 }).map((_, index) => {
+                  {MONTHS.map((label, index) => {
                     const month = String(index + 1).padStart(2, "0");
                     return (
                       <option key={month} value={month}>
-                        {DATE_FORMAT.format(new Date(Date.UTC(2026, index, 1))).slice(3, 6)}
+                        {label}
                       </option>
                     );
                   })}
@@ -969,7 +1284,10 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                   }}
                   className="inline-flex h-8 items-center gap-1 rounded border border-[var(--color-border)] px-2 text-[11px] text-[var(--color-foreground-secondary)] transition-colors hover:text-[var(--color-foreground)]"
                 >
-                  <IconRefresh size={12} className={status === "loading" ? "animate-spin" : undefined} />
+                  <IconRefresh
+                    size={12}
+                    className={status === "loading" ? "animate-spin motion-reduce:animate-none" : undefined}
+                  />
                   Refresh
                 </button>
                 <button
@@ -982,8 +1300,40 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                 </button>
               </div>
             </div>
+
+            {dateRangeInverted && (
+              <p role="status" className="text-[11px] text-amber-300/90">
+                The start date is after the end date, so no archived record can match. Adjust either date.
+              </p>
+            )}
+            <p className="text-[10px] leading-relaxed text-[var(--color-foreground-tertiary)]">
+              Dates filter on the date shown for each record: publication, advisory or catalogue date as reported by
+              the source. Incident dates are shown separately and are never used as a fallback.
+            </p>
           </div>
         </section>
+
+        {status === "loading" && (
+          <div className="mt-2 h-0.5 overflow-hidden rounded bg-white/[0.04]" aria-hidden="true">
+            <div className="h-full w-full animate-pulse rounded bg-[var(--color-accent)] motion-reduce:animate-none" />
+          </div>
+        )}
+
+        {snapshot.meta.freshness.stale && (
+          <div
+            role="status"
+            className="mt-3 flex flex-wrap items-center gap-2 rounded-[var(--radius-glass-sm)] border border-amber-500/30 bg-amber-500/[0.07] px-3 py-2 text-xs text-amber-200"
+          >
+            <IconClock size={13} className="shrink-0" />
+            <span>
+              No source has refreshed successfully in the last {snapshot.meta.freshness.staleAfterHours} hours.
+              Showing the records already stored; the newest items may be missing.
+              {snapshot.meta.freshness.lastSuccessAt
+                ? ` Last successful refresh: ${formatDate(snapshot.meta.freshness.lastSuccessAt, true)}.`
+                : ""}
+            </span>
+          </div>
+        )}
 
         {status === "error" && (
           <div
@@ -992,7 +1342,10 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
           >
             <span className="inline-flex items-center gap-1.5">
               <IconAlertTriangle size={13} />
-              {errorMessage || "The feed could not be refreshed."} Previously loaded results are still shown.
+              {errorMessage || "The feed could not be refreshed."}{" "}
+              {items.length > 0
+                ? "Previously loaded results are still shown."
+                : "The archive could not be reached. Try again."}
             </span>
             <button
               type="button"
@@ -1041,31 +1394,76 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
           </div>
 
           <aside
-            className="glass-card flex min-h-[320px] flex-col lg:max-h-[600px]"
+            id="intel-detail"
+            ref={panelRef}
+            tabIndex={-1}
             aria-label="Selected report or country"
+            aria-busy={Boolean(selectedId && !selectedItem && detailStatus !== "error")}
+            className="glass-card flex min-h-[320px] flex-col outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] lg:max-h-[600px]"
           >
             <div className="flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2.5">
               <span className="text-[11px] uppercase tracking-wider text-[var(--color-foreground-secondary)]">
-                {selectedItem ? "Report" : activeCluster ? "Country" : "Reference"}
+                {selectedId ? "Report" : activeCluster ? "Country" : "Reference"}
               </span>
-              {selectedItem && (
+              {selectedId && (
                 <button
                   type="button"
-                  onClick={() => setSelectedId(null)}
-                  className="text-[10px] text-[var(--color-foreground-tertiary)] hover:text-[var(--color-foreground)]"
+                  onClick={closeDetail}
+                  aria-label="Close report details"
+                  className="inline-flex items-center gap-1 text-[10px] text-[var(--color-foreground-tertiary)] transition-colors hover:text-[var(--color-foreground)]"
                 >
-                  back
+                  <IconX size={12} />
+                  Close
                 </button>
               )}
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto">
-              {selectedItem ? (
-                <ArticleDetail item={selectedItem} onClose={() => setSelectedId(null)} />
+              {selectedId ? (
+                selectedItem ? (
+                  <ArticleDetail
+                    item={selectedItem}
+                    related={selectedRelated}
+                    onClose={closeDetail}
+                    onSelectRelated={openDetail}
+                  />
+                ) : detailStatus === "error" ? (
+                  <div className="p-4" role="alert">
+                    <p className="text-sm text-[var(--color-foreground-secondary)]">
+                      This report could not be opened.
+                    </p>
+                    <p className="mt-1 text-xs leading-relaxed text-[var(--color-foreground-tertiary)]">
+                      {detailError}
+                    </p>
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          detailCache.delete(selectedId);
+                          setDetailStatus("idle");
+                          setDetailError("");
+                          setDetailRetryToken((token) => token + 1);
+                        }}
+                        className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)]"
+                      >
+                        Try again
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeDetail}
+                        className="rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)]"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <DetailSkeleton />
+                )
               ) : activeCluster ? (
                 <CountryDetail
                   cluster={activeCluster}
                   items={items}
-                  onSelectItem={setSelectedId}
+                  onSelectItem={openDetail}
                   onClear={() => setCountry(null)}
                 />
               ) : (
@@ -1088,6 +1486,7 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
               </span>
             </div>
             <span className="font-mono text-[10px] text-[var(--color-foreground-tertiary)]">
+              {status === "loading" ? "updating… · " : ""}
               {snapshot.meta.lastIngestAt
                 ? `last source refresh ${formatDate(snapshot.meta.lastIngestAt, true)}`
                 : "no source refresh yet"}
@@ -1097,27 +1496,52 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
           <div aria-live="polite" className="sr-only">
             {status === "loading"
               ? "Loading intelligence feed"
-              : `${snapshot.total} results match the current filters`}
+              : status === "error"
+                ? "The archive request failed"
+                : `${snapshot.total} results match the current filters`}
           </div>
 
           {status === "loading" && items.length === 0 ? (
             <FeedSkeleton />
-          ) : items.length === 0 ? (
+          ) : status === "error" && items.length === 0 ? (
             <div className="px-4 py-12 text-center">
               <p className="text-sm text-[var(--color-foreground-secondary)]">
-                No archived reports match these filters.
+                The archive could not be reached.
               </p>
               <p className="mx-auto mt-1 max-w-md text-xs text-[var(--color-foreground-tertiary)]">
-                History only contains what this site has ingested so far. Widen the date range, clear the search,
-                or reset the filters.
+                {errorMessage || "The request failed."} No cached results are available for this view.
               </p>
               <button
                 type="button"
-                onClick={resetFilters}
+                onClick={() => setRefreshToken((token) => token + 1)}
                 className="mt-3 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)]"
               >
-                Reset filters
+                Try again
               </button>
+            </div>
+          ) : items.length === 0 ? (
+            <div className="px-4 py-12 text-center">
+              <p className="text-sm text-[var(--color-foreground-secondary)]">
+                {archiveEmpty
+                  ? "The archive has no records yet."
+                  : hasFilters
+                    ? "No archived reports match these filters."
+                    : "No records are available for this view."}
+              </p>
+              <p className="mx-auto mt-1 max-w-md text-xs text-[var(--color-foreground-tertiary)]">
+                {archiveEmpty
+                  ? "Ingestion runs on a schedule; this page never contacts publishers directly. Check the source list below for the first refresh."
+                  : "History only contains what this site has ingested so far. Widen the date range, clear the search, or reset the filters."}
+              </p>
+              {hasFilters && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="mt-3 rounded-md border border-[var(--color-border)] px-3 py-1.5 text-xs text-[var(--color-foreground-secondary)] hover:text-[var(--color-foreground)]"
+                >
+                  Reset filters
+                </button>
+              )}
             </div>
           ) : (
             <div>
@@ -1126,7 +1550,7 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                   key={item.id}
                   item={item}
                   selected={item.id === selectedId}
-                  onSelect={() => setSelectedId(item.id)}
+                  onSelect={() => openDetail(item.id)}
                 />
               ))}
             </div>

@@ -10,6 +10,7 @@ import type {
 import { CATEGORIES, CATEGORY_ORDER } from "./types";
 import { SOURCES, UNAVAILABLE_SOURCES } from "./sources";
 import { ensureFresh, healthFromRepository, isIngesting } from "./ingest";
+import { computeFreshness, STALE_AFTER_MS } from "./freshness";
 import { getRepository } from "./storage";
 import type { IntelFilter } from "./storage/repository";
 
@@ -23,7 +24,6 @@ import type { IntelFilter } from "./storage/repository";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 50;
-const STALE_AFTER_MS = 6 * 3600_000;
 
 export type IntelQuery = IntelFilter;
 
@@ -215,6 +215,7 @@ export async function getSnapshot(
   const lastSuccessAt = latestSuccess(health);
   const storage = repository.info;
   const ingesting = isIngesting();
+  const freshness = computeFreshness(lastSuccessAt, coverage.count);
 
   return {
     items: page.items,
@@ -234,6 +235,7 @@ export async function getSnapshot(
         ...(repository.migration ? { migratedFrom: repository.migration.from } : {}),
       },
       sources: health,
+      freshness,
       degraded: failed.length > 0 || !storage.durable,
       notes: buildNotes({
         health,
@@ -249,8 +251,8 @@ export async function getSnapshot(
 }
 
 /** Default snapshot for the server-rendered first paint. */
-export async function getInitialSnapshot(): Promise<IntelSnapshot> {
-  const query = parseQuery(new URLSearchParams());
+export async function getInitialSnapshot(searchParams?: URLSearchParams): Promise<IntelSnapshot> {
+  const query = parseQuery(searchParams ?? new URLSearchParams());
   try {
     // A cold archive needs a refresh, but the page should not hang on it.
     // The budget is short because the page is not streamed: the whole document
@@ -271,8 +273,8 @@ export async function getInitialSnapshot(): Promise<IntelSnapshot> {
     return {
       items: [],
       total: 0,
-      page: 1,
-      pageSize: DEFAULT_PAGE_SIZE,
+      page: query.page,
+      pageSize: query.pageSize,
       hasMore: false,
       geo: [],
       facets: {
@@ -290,6 +292,7 @@ export async function getInitialSnapshot(): Promise<IntelSnapshot> {
           storage: { driver: "memory", durable: false, location: null },
         },
         sources: health,
+        freshness: { lastSuccessAt: null, stale: false, staleAfterHours: 6 },
         degraded: true,
         notes: ["The intelligence archive could not be read. Reload to try again."],
         lastRun: null,

@@ -267,6 +267,12 @@ export interface StorageInfo {
   location: string | null;
 }
 
+/** One record plus the small set of related records the detail panel shows. */
+export interface IntelDetail {
+  item: IntelItem;
+  related: IntelItem[];
+}
+
 export interface IntelSnapshot {
   items: IntelItem[];
   total: number;
@@ -287,6 +293,16 @@ export interface IntelSnapshot {
     coverage: { oldest: string | null; newest: string | null };
     archive: { count: number; storage: StorageInfo; migratedFrom?: string };
     sources: SourceHealth[];
+    /**
+     * Whether the archive itself is old. `stale` is computed on the server so
+     * the warning is present in the first HTML response, not only after
+     * hydration, and it never treats a non-durable driver as stale by itself.
+     */
+    freshness: {
+      lastSuccessAt: string | null;
+      stale: boolean;
+      staleAfterHours: number;
+    };
     /** True when at least one source could not be refreshed on this run. */
     degraded: boolean;
     notes: string[];
