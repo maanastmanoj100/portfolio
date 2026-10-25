@@ -1171,6 +1171,19 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
                     {source.error ? ` Last error: ${source.error}.` : ""}
                     {source.status === "skipped" ? " Not ingested in this deployment." : ""}
                   </p>
+                  {source.status !== "skipped" && (
+                    <p className="mt-1 font-mono text-[10px] leading-relaxed text-[var(--color-foreground-tertiary)]">
+                      {source.lastSuccessAt
+                        ? `last success ${formatDate(source.lastSuccessAt, true)}`
+                        : "no successful refresh yet"}
+                      {(source.consecutiveFailures ?? 0) > 0
+                        ? ` · ${source.consecutiveFailures} consecutive failure${source.consecutiveFailures === 1 ? "" : "s"}`
+                        : ""}
+                      {source.nextAttemptAt
+                        ? ` · next attempt ${formatDate(source.nextAttemptAt, true)}`
+                        : ""}
+                    </p>
+                  )}
                 </li>
               ))}
             </ul>
@@ -1190,14 +1203,39 @@ export function CyberIntelPage({ initial }: { initial: IntelSnapshot }) {
               <li className="flex gap-2">
                 <IconInfoCircle size={12} className="mt-0.5 shrink-0 text-[var(--color-foreground-tertiary)]" />
                 <span>
-                  Archive: {snapshot.meta.archive.count} records,{" "}
-                  {snapshot.meta.archive.persistent ? "persisted to disk" : "memory only"} at{" "}
-                  <code className="rounded bg-white/[0.04] px-1 py-0.5 text-[10px]">
-                    {snapshot.meta.archive.path ?? "unavailable"}
-                  </code>
+                  Archive: {snapshot.meta.archive.count} records in{" "}
+                  {snapshot.meta.archive.storage.driver}
+                  {snapshot.meta.archive.storage.durable
+                    ? " (durable across redeploys)"
+                    : " (not durable across redeploys)"}
+                  {snapshot.meta.archive.storage.location ? (
+                    <>
+                      {" "}
+                      at{" "}
+                      <code className="rounded bg-white/[0.04] px-1 py-0.5 text-[10px]">
+                        {snapshot.meta.archive.storage.location}
+                      </code>
+                    </>
+                  ) : null}
                   .
                 </span>
               </li>
+              {snapshot.meta.lastRun ? (
+                <li className="flex gap-2">
+                  <IconInfoCircle size={12} className="mt-0.5 shrink-0 text-[var(--color-foreground-tertiary)]" />
+                  <span>
+                    Last ingestion run: {snapshot.meta.lastRun.status}
+                    {snapshot.meta.lastRun.finishedAt
+                      ? ` at ${formatDate(snapshot.meta.lastRun.finishedAt, true)}`
+                      : ""}
+                    {" · "}
+                    {snapshot.meta.lastRun.sourcesOk}/{snapshot.meta.lastRun.sourcesAttempted} sources ok
+                    {" · "}
+                    {snapshot.meta.lastRun.itemsNew} new, {snapshot.meta.lastRun.itemsUpdated} updated
+                    {snapshot.meta.lastRun.note ? `. ${snapshot.meta.lastRun.note}` : "."}
+                  </span>
+                </li>
+              ) : null}
               <li className="flex gap-2">
                 <IconInfoCircle size={12} className="mt-0.5 shrink-0 text-[var(--color-foreground-tertiary)]" />
                 <span>

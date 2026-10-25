@@ -152,6 +152,12 @@ export interface IntelItem {
   sourceId: string;
   sourceName: string;
   sourceKind: IntelSourceMeta["kind"];
+  /**
+   * The identifier the publisher itself uses (Atom `<id>`, RSS `<guid>`, CVE
+   * id, advisory slug). Used as a second dedupe key so a publisher renaming a
+   * URL does not create a second record.
+   */
+  externalId: string | null;
   category: IntelCategory;
   /** `source` = the feed told us, `keyword` = our rule matched, `type` = feed type. */
   categoryBasis: "source" | "keyword" | "type";
@@ -178,6 +184,8 @@ export interface IntelItem {
   attribution: string | null;
   /** When our archive first stored this record. */
   firstSeenAt: string;
+  /** Last time the source still returned this record. */
+  lastSeenAt: string;
 }
 
 /** Aggregated marker for the globe: one per country, never per article. */
@@ -201,6 +209,62 @@ export interface SourceHealth {
   itemCount: number;
   fetchedAt: string | null;
   error?: string;
+  /** Last successful refresh (null if never). */
+  lastSuccessAt?: string | null;
+  /** Consecutive failed attempts, used to explain backoff in the UI. */
+  consecutiveFailures?: number;
+  /** Earliest time the scheduler will try this source again. */
+  nextAttemptAt?: string | null;
+  /** Wall-clock duration of the last attempt. */
+  durationMs?: number | null;
+}
+
+/**
+ * Durable per-source ingestion state.
+ *
+ * `nextAttemptAt` is what makes scheduling idempotent across processes: every
+ * worker reads the same row, so a second runner can see that a source is not
+ * due yet instead of hammering the publisher.
+ */
+export interface SourceState {
+  id: string;
+  status: "ok" | "error" | "skipped";
+  itemCount: number;
+  fetchedAt: string | null;
+  lastSuccessAt: string | null;
+  error: string | null;
+  consecutiveFailures: number;
+  nextAttemptAt: string | null;
+  durationMs: number | null;
+  etag: string | null;
+  lastModified: string | null;
+}
+
+/** One execution of the ingestion runner, recorded for observability. */
+export interface IngestRun {
+  id: string;
+  trigger: "cron" | "manual" | "request";
+  startedAt: string;
+  finishedAt: string | null;
+  status: "running" | "ok" | "partial" | "error" | "skipped";
+  sourcesAttempted: number;
+  sourcesOk: number;
+  sourcesFailed: number;
+  itemsFetched: number;
+  itemsNew: number;
+  itemsUpdated: number;
+  /** Sanitised, non-secret summary. Never a stack trace. */
+  note: string | null;
+}
+
+export type StorageDriver = "postgres" | "sqlite" | "memory";
+
+export interface StorageInfo {
+  driver: StorageDriver;
+  /** False when the archive lives on an ephemeral filesystem. */
+  durable: boolean;
+  /** Human-readable location, e.g. "postgres" or ".data/cyber-intel.sqlite". */
+  location: string | null;
 }
 
 export interface IntelSnapshot {
@@ -221,10 +285,12 @@ export interface IntelSnapshot {
     lastIngestAt: string | null;
     /** Earliest/latest publication dates actually held in the archive. */
     coverage: { oldest: string | null; newest: string | null };
-    archive: { persistent: boolean; count: number; path: string | null };
+    archive: { count: number; storage: StorageInfo; migratedFrom?: string };
     sources: SourceHealth[];
     /** True when at least one source could not be refreshed on this run. */
     degraded: boolean;
     notes: string[];
+    /** Most recent ingestion run, when one has been recorded. */
+    lastRun?: IngestRun | null;
   };
 }
