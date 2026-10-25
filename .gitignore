@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# cyber intelligence archive (local NDJSON, never committed)
+/.data/
+
 # production
 /build
 

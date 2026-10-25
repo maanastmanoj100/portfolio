@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
+import { profile } from "@/data/portfolio";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -25,18 +26,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cyber Nexus | Cybersecurity Professional Portfolio",
-  description: "Award-winning cybersecurity professional specializing in penetration testing, incident response, and security architecture. Explore interactive projects, certifications, and cutting-edge security research.",
-  keywords: ["cybersecurity", "penetration testing", "ethical hacking", "security engineer", "portfolio"],
+  title: {
+    default: `${profile.name} — ${profile.role}`,
+    template: `%s | ${profile.name}`,
+  },
+  description: profile.metaDescription,
+  keywords: ["cybersecurity", "full-stack developer", "Next.js", "TypeScript", "Python", "portfolio"],
+  authors: [{ name: profile.name, url: profile.github }],
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Cyber Nexus",
+    title: profile.name,
   },
   openGraph: {
-    title: "Cyber Nexus | Cybersecurity Professional Portfolio",
-    description: "Award-winning cybersecurity professional specializing in penetration testing and security architecture.",
+    title: `${profile.name} — ${profile.role}`,
+    description: profile.metaDescription,
     type: "website",
   },
 };

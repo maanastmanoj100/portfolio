@@ -13,7 +13,9 @@
   --color-background: #0a0e0a;
   --color-foreground: #e4e8f0;
   --color-foreground-secondary: #8e92a0;
-  --color-foreground-tertiary: #5a5e6e;
+  /* Raised from #5a5e6e (~3.0:1) to clear WCAG AA (4.75:1+) on both the page
+     background and translucent card surfaces. */
+  --color-foreground-tertiary: #7a8290;
   --color-soft-white: #f0f4f8;
 
   --color-accent: #00b4d8;
@@ -76,14 +78,6 @@
 
   --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
-
-  /* Responsive breakpoints as CSS variables for JS use */
-  --bp-xs: 320px;
-  --bp-sm: 480px;
-  --bp-md: 768px;
-  --bp-lg: 1024px;
-  --bp-xl: 1280px;
-  --bp-2xl: 1536px;
 }
 
 @layer base {
@@ -144,16 +138,6 @@
   isolation: isolate;
 }
 
-.liquid-glass::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--color-glass-reflection);
-  pointer-events: none;
-  z-index: 0;
-}
-
 .liquid-glass-hover:hover {
   background: var(--color-glass-bg-hover);
   border-color: var(--color-border-hover);
@@ -200,41 +184,6 @@
   background-clip: text;
 }
 
-.text-gradient-subtle {
-  background: linear-gradient(135deg, #e4e8f0 0%, #8e92a0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.glow-accent {
-  box-shadow: 0 0 20px rgba(0, 180, 216, 0.06), 0 0 40px rgba(0, 180, 216, 0.03);
-}
-
-.glow-accent-strong {
-  box-shadow: 0 0 24px rgba(0, 180, 216, 0.12), 0 0 48px rgba(0, 180, 216, 0.06);
-}
-
-.ambient-grid {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-
-.glass-edge-highlight {
-  position: relative;
-}
-
-.glass-edge-highlight::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.02);
-  pointer-events: none;
-}
-
 .matrix-mode {
   --color-accent: #00ff41;
   --color-accent-soft: rgba(0, 255, 65, 0.12);
@@ -258,145 +207,9 @@
   50% { opacity: 0.6; }
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
-}
-
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-
-@keyframes breathe {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.02); }
-}
-
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes scale-in {
-  from { opacity: 0; transform: scale(0.96); }
-  to { opacity: 1; transform: scale(1); }
-}
-
-@keyframes glass-shimmer {
-  0% { opacity: 0; transform: translateX(-100%) rotate(15deg); }
-  30% { opacity: 0.04; }
-  60% { opacity: 0.04; }
-  100% { opacity: 0; transform: translateX(200%) rotate(15deg); }
-}
-
-@keyframes ripple {
-  to { transform: scale(40); opacity: 0; }
-}
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-@keyframes node-pulse {
-  0%, 100% { opacity: 0.4; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.3); }
-}
-
-@keyframes signal-propagation {
-  0% { stroke-dashoffset: 100; }
-  100% { stroke-dashoffset: 0; }
-}
-
-@keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(0,180,216,0.08); }
-  50% { box-shadow: 0 0 20px rgba(0,180,216,0.15); }
-}
-
-@keyframes scale-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.05); }
-}
-
-@keyframes loading-pulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
 .animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
-.animate-float { animation: float 5s ease-in-out infinite; }
-.animate-shimmer { animation: shimmer 2s linear infinite; background-size: 200% auto; }
-.animate-breathe { animation: breathe 4s ease-in-out infinite; }
-.animate-slide-up { animation: slide-up 0.5s ease-out; }
-.animate-slide-down { animation: slide-down 0.3s ease-out; }
-.animate-scale-in { animation: scale-in 0.3s ease-out; }
-.animate-ripple { animation: ripple 0.6s ease-out forwards; }
-.animate-node-pulse { animation: node-pulse 2s ease-in-out infinite; }
-.animate-signal { animation: signal-propagation 2s linear infinite; }
-.animate-glow-pulse { animation: glow-pulse 2s ease-in-out infinite; }
-.animate-scale-pulse { animation: scale-pulse 2s ease-in-out infinite; }
-.animate-loading-pulse { animation: loading-pulse 1.5s ease-in-out infinite; }
-
-.animate-glass-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-.animate-glass-shimmer::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.03) 50%,
-    transparent 100%
-  );
-  animation: glass-shimmer 3s ease-in-out infinite;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.typing-cursor::after {
-  content: "|";
-  animation: blink 1s step-end infinite;
-  color: var(--color-accent);
-}
-
-/* ── Responsive Utilities ── */
-
-.touch-target {
-  min-height: 44px;
-  min-width: 44px;
-}
-
-@media (pointer: coarse) {
-  .touch-target-guaranteed {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 0.5rem;
-  }
-}
-
-@media (hover: hover) {
-  .hover-only-effect {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-  }
-  .group:hover .hover-only-effect {
-    opacity: 1;
-  }
-}
 
 @media (hover: none) {
-  .hover-only-effect {
-    opacity: 1;
-  }
   .glass-card:hover {
     background: var(--color-glass-bg);
     border-color: var(--color-glass-border);
@@ -456,76 +269,39 @@
   }
 }
 
-/* ── Container utility for max-width + padding ── */
-.section-container {
-  width: 100%;
-  max-width: 1280px;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-}
-
-@media (min-width: 480px) {
-  .section-container {
-    padding-left: 1.5rem;
-    padding-right: 1.5rem;
+/*
+ * Two micro-interactions that used to pull framer-motion (~38 KB gzip) into
+ * every route's initial bundle. They are plain entrance animations, so CSS
+ * does the same job for a fraction of the cost.
+ */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-@media (min-width: 768px) {
-  .section-container {
-    padding-left: 2rem;
-    padding-right: 2rem;
+.animate-toast-in {
+  animation: toast-in 180ms ease-out both;
+}
+
+@keyframes easter-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
-@media (min-width: 1024px) {
-  .section-container {
-    padding-left: 2.5rem;
-    padding-right: 2.5rem;
-  }
-}
-
-/* ── Fluid typography scale ── */
-.text-fluid-xs {
-  font-size: clamp(0.625rem, 1.5vw, 0.75rem);
-}
-
-.text-fluid-sm {
-  font-size: clamp(0.75rem, 2vw, 0.875rem);
-}
-
-.text-fluid-base {
-  font-size: clamp(0.875rem, 2.5vw, 1rem);
-}
-
-.text-fluid-lg {
-  font-size: clamp(1rem, 3vw, 1.125rem);
-}
-
-.text-fluid-xl {
-  font-size: clamp(1.125rem, 4vw, 1.25rem);
-}
-
-.text-fluid-2xl {
-  font-size: clamp(1.25rem, 5vw, 1.5rem);
-}
-
-.text-fluid-3xl {
-  font-size: clamp(1.5rem, 6vw, 2rem);
-}
-
-.text-fluid-hero {
-  font-size: clamp(2rem, 8vw, 4rem);
-  line-height: 1.1;
-}
-
-/* ── Reduced data / battery saver ── */
-@media (prefers-reduced-data: reduce) {
-  .render-heavy {
-    display: none;
-  }
+.animate-easter-pop {
+  animation: easter-pop 220ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -536,16 +312,7 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-  .animate-float,
-  .animate-breathe,
-  .animate-pulse-glow,
-  .animate-node-pulse,
-  .animate-glow-pulse,
-  .animate-scale-pulse,
-  .animate-glass-shimmer::before {
+  .animate-pulse-glow {
     animation: none !important;
-  }
-  .motion-safe {
-    transition: none !important;
   }
 }

@@ -4,8 +4,7 @@ import { type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { useUIStore } from "@/stores/ui-store";
 import { AppProvider } from "@/components/layout/providers";
-import { Topbar } from "./topbar";
-import { NavigationDock } from "./navigation-dock";
+import { SiteHeader } from "./site-header";
 import { Footer } from "./footer";
 import { ToastContainer } from "@/components/feedback/toast";
 import { EasterEggs } from "@/components/features/easter-eggs";
@@ -55,8 +54,7 @@ function ShellContent({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <Topbar />
-      <NavigationDock />
+      <SiteHeader />
       {commandPaletteOpen && <CommandPalette />}
       {searchOpen && <SearchModal />}
       {aiAssistantOpen && <AiAssistant />}
@@ -67,7 +65,7 @@ function ShellContent({ children }: { children: ReactNode }) {
       <EasterEggs />
       <ToastContainer />
 
-      <main className="min-h-screen pt-14 pb-28 safe-area-bottom">{children}</main>
+      <main className="min-h-[70vh]">{children}</main>
 
       <Footer />
     </>

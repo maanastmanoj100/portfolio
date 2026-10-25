@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useCallback, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+
+/**
+ * Keyboard easter eggs.
+ *
+ * This used to render through framer-motion, which meant ~38 KB gzip of
+ * animation library was fetched on every route before anything interactive
+ * happened — for an overlay most visitors never see. The entrance is a single
+ * CSS keyframe now; the global `prefers-reduced-motion` rule collapses it to an
+ * instant appearance, and the 3s timer still removes the node.
+ */
 
 const konamiCode = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
 const matrixCode = ["m", "a", "t", "r", "i", "x"];
@@ -48,22 +57,23 @@ export function EasterEggs() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [konamiProgress, matrixProgress, handleKonami]);
 
+  if (!showKonami) return null;
+
   return (
-    <AnimatePresence>
-      {showKonami && (
-        <motion.div
-          className="fixed inset-0 z-[200] flex items-center justify-center pointer-events-none"
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.8 }}
-        >
-          <div className="text-center">
-            <div className="text-6xl mb-4">🛡️</div>
-            <div className="text-2xl font-bold text-gradient mb-2">EASTER EGG UNLOCKED!</div>
-            <div className="text-sm text-soft-white/50">Matrix Mode Toggled. Type &apos;matrix&apos; anytime to toggle.</div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div
+      className="animate-easter-pop pointer-events-none fixed inset-0 z-[200] flex items-center justify-center"
+      role="status"
+      aria-live="polite"
+    >
+      <div className="text-center">
+        <div className="mb-4 text-6xl" aria-hidden="true">
+          🛡️
+        </div>
+        <div className="text-gradient mb-2 text-2xl font-bold">EASTER EGG UNLOCKED!</div>
+        <div className="text-sm text-foreground-secondary">
+          Matrix Mode Toggled. Type &apos;matrix&apos; anytime to toggle.
+        </div>
+      </div>
+    </div>
   );
 }

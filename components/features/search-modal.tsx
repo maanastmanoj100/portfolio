@@ -1,21 +1,40 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useApp } from "@/lib/store";
 import { useRouter } from "next/navigation";
-import { IconSearch, IconCode, IconBrain, IconFileText, IconNews } from "@tabler/icons-react";
+import {
+  IconSearch,
+  IconCode,
+  IconUser,
+  IconMail,
+  IconHome,
+} from "@tabler/icons-react";
+import { featuredProjects, otherProjects } from "@/data/portfolio";
 
+/**
+ * Site search.
+ *
+ * The previous version searched a hardcoded list of projects and credentials
+ * that did not exist ("Sentinel AI", "ChainGuard", "OSCP Certification"). It
+ * now indexes the real pages and the real repositories in `data/portfolio.ts`,
+ * so a result can always be opened and verified.
+ */
 const searchData = [
-  { label: "Sentinel AI", href: "/projects", type: "Project", icon: IconCode },
-  { label: "ChainGuard", href: "/projects", type: "Project", icon: IconCode },
-  { label: "Penetration Testing", href: "/skills", type: "Skill", icon: IconBrain },
-  { label: "Incident Response", href: "/skills", type: "Skill", icon: IconBrain },
-  { label: "OSCP Certification", href: "/certifications", type: "Certification", icon: IconBrain },
-  { label: "Security Resume", href: "/resume", type: "Resume", icon: IconFileText },
-  { label: "Zero Trust Architecture", href: "/blog", type: "Blog", icon: IconNews },
-  { label: "AI Threat Detection", href: "/blog", type: "Blog", icon: IconNews },
+  { label: "Home", href: "/", type: "Page", icon: IconHome },
+  { label: "Projects", href: "/projects", type: "Page", icon: IconCode },
+  { label: "About", href: "/about", type: "Page", icon: IconUser },
+  { label: "Contact", href: "/contact", type: "Page", icon: IconMail },
+  ...[...featuredProjects, ...otherProjects].map((project) => ({
+    label: project.name,
+    href: `/projects/${project.slug}`,
+    type: "Project",
+    icon: IconCode,
+  })),
 ];
+
+type SearchItem = (typeof searchData)[number];
 
 export function SearchModal() {
   const app = useApp();
@@ -23,28 +42,38 @@ export function SearchModal() {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
-  const results = query
-    ? searchData.filter((item) =>
-        item.label.toLowerCase().includes(query.toLowerCase()) ||
-        item.type.toLowerCase().includes(query.toLowerCase())
-      )
-    : [];
+  const results = useMemo(
+    () =>
+      query
+        ? searchData.filter(
+            (item) =>
+              item.label.toLowerCase().includes(query.toLowerCase()) ||
+              item.type.toLowerCase().includes(query.toLowerCase()),
+          )
+        : [],
+    [query],
+  );
 
-  const handleSelect = useCallback((item: typeof searchData[0]) => {
-    app.setSearchOpen(false);
-    setQuery("");
-    router.push(item.href);
-  }, [app, router]);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
+  const handleSelect = useCallback(
+    (item: SearchItem) => {
+      app.setSearchOpen(false);
+      setQuery("");
+      router.push(item.href);
+    },
+    [app, router],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!app.searchOpen) return;
-      if (e.key === "ArrowDown") { e.preventDefault(); setSelectedIndex((i) => Math.min(i + 1, results.length - 1)); }
-      if (e.key === "ArrowUp") { e.preventDefault(); setSelectedIndex((i) => Math.max(i - 1, 0)); }
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedIndex((i) => Math.min(i + 1, results.length - 1));
+      }
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedIndex((i) => Math.max(i - 1, 0));
+      }
       if (e.key === "Enter" && results[selectedIndex]) handleSelect(results[selectedIndex]);
       if (e.key === "Escape") app.setSearchOpen(false);
     };
@@ -61,43 +90,60 @@ export function SearchModal() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => app.setSearchOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => app.setSearchOpen(false)}
+          />
           <motion.div
-            className="relative w-full max-w-lg glass rounded-2xl border border-border shadow-2xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search"
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="flex items-center gap-3 p-4 border-b border-border/50">
-              <IconSearch size={16} className="text-soft-white/30 shrink-0" />
+            <div className="flex items-center gap-3 border-b border-border/60 p-4">
+              <IconSearch size={16} className="shrink-0 text-foreground-tertiary" />
               <input
                 autoFocus
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search projects, skills, articles..."
-                className="flex-1 bg-transparent text-sm text-soft-white outline-none placeholder:text-soft-white/20"
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setSelectedIndex(0);
+                }}
+                placeholder="Search projects and pages…"
+                aria-label="Search projects and pages"
+                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-tertiary"
               />
-              <kbd className="px-1.5 py-0.5 text-xs bg-white/5 rounded text-soft-white/30">ESC</kbd>
+              <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-foreground-tertiary">
+                ESC
+              </kbd>
             </div>
             {query && (
               <div className="max-h-64 overflow-y-auto p-2">
                 {results.map((item, i) => (
                   <button
-                    key={item.label}
-                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                      i === selectedIndex ? "bg-cyan/10 text-cyan" : "text-soft-white/60 hover:bg-white/5"
+                    key={item.href}
+                    type="button"
+                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                      i === selectedIndex
+                        ? "bg-accent-soft text-accent"
+                        : "text-foreground-secondary hover:bg-white/5"
                     }`}
                     onClick={() => handleSelect(item)}
                     onMouseEnter={() => setSelectedIndex(i)}
                   >
                     <item.icon size={16} className="shrink-0" />
                     <span className="flex-1 text-left">{item.label}</span>
-                    <span className="text-xs text-soft-white/30 font-mono">{item.type}</span>
+                    <span className="font-mono text-xs text-foreground-tertiary">
+                      {item.type}
+                    </span>
                   </button>
                 ))}
                 {results.length === 0 && (
-                  <div className="px-3 py-8 text-center text-sm text-soft-white/30">
+                  <div className="px-3 py-8 text-center text-sm text-foreground-tertiary">
                     No results for &ldquo;{query}&rdquo;
                   </div>
                 )}

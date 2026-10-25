@@ -7,32 +7,23 @@ import { useRouter } from "next/navigation";
 import {
   IconHome,
   IconCode,
-  IconBrain,
-  IconCertificate,
-  IconFileText,
-  IconNews,
+  IconUser,
   IconMail,
-  IconTerminal2,
-  IconRobot,
-  IconUserShield,
-  IconMoon,
-  IconDownload,
   IconSearch,
 } from "@tabler/icons-react";
 
+/**
+ * Command palette (⌘K / Ctrl+K).
+ *
+ * Only real destinations are listed. The previous version also linked to
+ * /skills, /certifications, /resume and /blog — pages whose content is not
+ * verified — and offered a "Download Resume" action with no resume behind it.
+ */
 const commands = [
   { id: "home", label: "Go to Home", icon: IconHome, action: "/" },
   { id: "projects", label: "View Projects", icon: IconCode, action: "/projects" },
-  { id: "skills", label: "Explore Skills", icon: IconBrain, action: "/skills" },
-  { id: "certs", label: "View Certifications", icon: IconCertificate, action: "/certifications" },
-  { id: "resume", label: "Open Resume", icon: IconFileText, action: "/resume" },
-  { id: "blog", label: "Read Blog", icon: IconNews, action: "/blog" },
+  { id: "about", label: "About", icon: IconUser, action: "/about" },
   { id: "contact", label: "Get in Touch", icon: IconMail, action: "/contact" },
-  { id: "terminal", label: "Toggle Terminal", icon: IconTerminal2, action: "terminal" },
-  { id: "ai", label: "Open AI Assistant", icon: IconRobot, action: "ai" },
-  { id: "recruiter", label: "Toggle Recruiter Mode", icon: IconUserShield, action: "recruiter" },
-  { id: "matrix", label: "Toggle Matrix Mode", icon: IconMoon, action: "matrix" },
-  { id: "download", label: "Download Resume", icon: IconDownload, action: "download" },
   { id: "search", label: "Search Site", icon: IconSearch, action: "search" },
 ];
 
@@ -46,36 +37,18 @@ export function CommandPalette() {
     ? commands.filter((c) => c.label.toLowerCase().includes(query.toLowerCase()))
     : commands;
 
-  const executeCommand = useCallback((cmd: typeof commands[0]) => {
-    app.setCommandPaletteOpen(false);
-    setQuery("");
-    switch (cmd.action) {
-      case "terminal":
-        app.setHackerTerminalOpen(true);
-        break;
-      case "ai":
-        app.setAiAssistantOpen(true);
-        break;
-      case "recruiter":
-        app.setRecruiterMode(!app.recruiterMode);
-        break;
-      case "matrix":
-        app.setMatrixMode(!app.matrixMode);
-        break;
-      case "download":
-        window.open("/resume", "_blank");
-        break;
-      case "search":
+  const executeCommand = useCallback(
+    (cmd: (typeof commands)[number]) => {
+      app.setCommandPaletteOpen(false);
+      setQuery("");
+      if (cmd.action === "search") {
         app.setSearchOpen(true);
-        break;
-      default:
-        router.push(cmd.action);
-    }
-  }, [app, router]);
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
+        return;
+      }
+      router.push(cmd.action);
+    },
+    [app, router],
+  );
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -108,31 +81,46 @@ export function CommandPalette() {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => app.setCommandPaletteOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => app.setCommandPaletteOpen(false)}
+          />
           <motion.div
-            className="relative w-full max-w-lg glass rounded-2xl border border-border shadow-2xl overflow-hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Command palette"
+            className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-border bg-background/95 shadow-2xl backdrop-blur-xl"
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="flex items-center gap-3 p-4 border-b border-border/50">
-              <IconSearch size={16} className="text-soft-white/30 shrink-0" />
+            <div className="flex items-center gap-3 border-b border-border/60 p-4">
+              <IconSearch size={16} className="shrink-0 text-foreground-tertiary" />
               <input
                 autoFocus
                 value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Type a command or search..."
-                className="flex-1 bg-transparent text-sm text-soft-white outline-none placeholder:text-soft-white/20"
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setSelectedIndex(0);
+                }}
+                placeholder="Go to…"
+                aria-label="Go to a page"
+                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-foreground-tertiary"
               />
-              <kbd className="px-1.5 py-0.5 text-xs bg-white/5 rounded text-soft-white/30">ESC</kbd>
+              <kbd className="rounded bg-white/5 px-1.5 py-0.5 text-xs text-foreground-tertiary">
+                ESC
+              </kbd>
             </div>
             <div className="max-h-64 overflow-y-auto p-2">
               {filtered.map((cmd, i) => (
                 <button
                   key={cmd.id}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-                    i === selectedIndex ? "bg-cyan/10 text-cyan" : "text-soft-white/60 hover:bg-white/5"
+                  type="button"
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
+                    i === selectedIndex
+                      ? "bg-accent-soft text-accent"
+                      : "text-foreground-secondary hover:bg-white/5"
                   }`}
                   onClick={() => executeCommand(cmd)}
                   onMouseEnter={() => setSelectedIndex(i)}
@@ -142,7 +130,9 @@ export function CommandPalette() {
                 </button>
               ))}
               {filtered.length === 0 && (
-                <div className="px-3 py-8 text-center text-sm text-soft-white/30">No results found</div>
+                <div className="px-3 py-8 text-center text-sm text-foreground-tertiary">
+                  No results found
+                </div>
               )}
             </div>
           </motion.div>

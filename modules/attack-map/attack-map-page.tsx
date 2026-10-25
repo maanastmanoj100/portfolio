@@ -1,18 +1,84 @@
 "use client";
 
-import { useState, useMemo, useCallback, type ReactNode } from "react";
+import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { PageTransition } from "@/components/layout/page-transition";
 import { useUIStore } from "@/stores/ui-store";
-import { AttackMapGlobe } from "./attack-map-globe";
 import { ThreatActorsPanel, CountryInfoPanel, AttackFilterBar } from "./attack-map-intel";
 import { AttackTimeline, LiveEventFeed } from "./attack-map-timeline";
 import { ThreatDistributionChart, TopThreatCountries, AttackTrendChart, QuickStats } from "./attack-map-charts";
 import { ATTACK_EVENTS } from "./attack-map-data";
-import type { AttackEvent } from "./attack-map-data";
 import {
   IconRadar, IconGlobe, IconUsers, IconTimeline, IconChartBar, IconAlertTriangle, IconX, IconMenu2,
 } from "@tabler/icons-react";
+
+/**
+ * Three.js + React Three Fiber + drei are ~600 KB of raw JavaScript that no
+ * visitor needs until this one page. The globe is code-split and skipped during
+ * SSR; the fallback below fills the exact same box, so there is no layout shift
+ * while the chunk loads.
+ */
+const AttackMapGlobe = dynamic(
+  () => import("./attack-map-globe").then((m) => m.AttackMapGlobe),
+  { ssr: false, loading: () => <GlobeFallback /> },
+);
+
+/**
+ * Fetching the chunk is not enough: mounting the scene immediately still hands
+ * the main thread a WebGL setup right after hydration. Waiting for the first
+ * idle period lets the page become readable and interactive first.
+ */
+function useDeferredMount(timeout = 1500) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const idle = window.requestIdleCallback?.bind(window);
+    if (idle) {
+      const handle = idle(() => setReady(true), { timeout });
+      return () => window.cancelIdleCallback?.(handle);
+    }
+    const timer = setTimeout(() => setReady(true), 300);
+    return () => clearTimeout(timer);
+  }, [timeout]);
+
+  return ready;
+}
+
+function GlobeFallback() {
+  return (
+    <div
+      className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle_at_50%_50%,rgba(0,180,216,0.10),transparent_70%)]"
+      role="img"
+      aria-label="Loading interactive 3D attack map"
+    >
+      <div className="relative h-40 w-40 sm:h-52 sm:w-52">
+        <span className="absolute inset-0 rounded-full border border-accent-border" />
+        <span className="absolute inset-6 rounded-full border border-border" />
+        <span className="absolute inset-12 rounded-full border border-border" />
+        <span className="animate-pulse-glow absolute inset-0 rounded-full border border-accent/40" />
+        <span className="absolute inset-0 flex items-center justify-center font-mono text-[10px] uppercase tracking-widest text-foreground-tertiary">
+          Loading map
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** Tracks the OS "reduce motion" setting without pulling in a library. */
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return reduced;
+}
 
 type AttackView = "overview" | "actors" | "timeline" | "analytics";
 
@@ -96,6 +162,8 @@ function OverviewView({
   onTypeChange: (t: string) => void;
 }) {
   const uniqueTypes = useMemo(() => [...new Set(ATTACK_EVENTS.map((e) => e.type))], []);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const sceneReady = useDeferredMount();
 
   const filteredAttacks = useMemo(() => {
     return ATTACK_EVENTS.filter((e) => {
@@ -117,14 +185,18 @@ function OverviewView({
               <span className="text-xs text-foreground-tertiary font-mono">{filteredAttacks.length} active events</span>
             </div>
             <div className="h-[350px] sm:h-[450px] rounded-lg overflow-hidden">
-              <AttackMapGlobe
-                selectedCountry={selectedCountry}
-                hoveredCountry={hoveredCountry}
-                onCountryClick={onCountryClick}
-                onCountryHover={onCountryHover}
-                activeAttacks={filteredAttacks}
-                autoRotate={!selectedCountry}
-              />
+              {sceneReady ? (
+                <AttackMapGlobe
+                  selectedCountry={selectedCountry}
+                  hoveredCountry={hoveredCountry}
+                  onCountryClick={onCountryClick}
+                  onCountryHover={onCountryHover}
+                  activeAttacks={filteredAttacks}
+                  autoRotate={!selectedCountry && !prefersReducedMotion}
+                />
+              ) : (
+                <GlobeFallback />
+              )}
             </div>
           </div>
         </div>
@@ -187,7 +259,10 @@ function AnalyticsView() {
   );
 }
 
-const viewComponents: Record<AttackView, (props: any) => ReactNode> = {
+const viewComponents: Record<
+  AttackView,
+  (props: React.ComponentProps<typeof OverviewView>) => ReactNode
+> = {
   overview: (props) => <OverviewView {...props} />,
   actors: () => <ActorView />,
   timeline: () => <TimelineView />,

@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { PageTransition } from "@/components/layout/page-transition";
 import { GlassCard } from "@/components/ui/glass-card";
-import { SkillsGalaxyThree } from "./skills-galaxy-three";
 import { SkillInfoPanel } from "./skill-info-panel";
 import { galaxySkills, skillConstellations, learningPaths } from "@/data/skills-galaxy";
 import { projects } from "@/data/projects";
@@ -18,6 +18,58 @@ import {
   IconSettings, IconTools, IconEye,
   IconFilter, IconRoute, IconArrowRight,
 } from "@tabler/icons-react";
+
+/**
+ * The galaxy is a Three.js scene (three + @react-three/fiber + drei, several
+ * hundred KB). It is code-split and skipped during SSR; the fallback occupies
+ * the same fixed-height box so nothing moves when the chunk arrives.
+ */
+const SkillsGalaxyThree = dynamic(
+  () => import("./skills-galaxy-three").then((m) => m.SkillsGalaxyThree),
+  { ssr: false, loading: () => <GalaxyFallback /> },
+);
+
+/**
+ * Fetching the chunk is not enough: mounting the scene immediately still hands
+ * the main thread a WebGL setup right after hydration. Waiting for the first
+ * idle period lets the page become readable and interactive first.
+ */
+function useDeferredMount(timeout = 1500) {
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const idle = window.requestIdleCallback?.bind(window);
+    if (idle) {
+      const handle = idle(() => setReady(true), { timeout });
+      return () => window.cancelIdleCallback?.(handle);
+    }
+    const timer = setTimeout(() => setReady(true), 300);
+    return () => clearTimeout(timer);
+  }, [timeout]);
+
+  return ready;
+}
+
+function GalaxyFallback() {
+  return (
+    <div
+      className="flex h-full w-full items-center justify-center"
+      role="img"
+      aria-label="Loading interactive skills galaxy"
+    >
+      <div className="text-center">
+        <div className="relative mx-auto h-24 w-24">
+          <span className="animate-pulse-glow absolute inset-0 rounded-full border border-accent-border" />
+          <span className="absolute inset-4 rounded-full border border-border" />
+          <span className="absolute inset-8 rounded-full border border-border" />
+        </div>
+        <p className="mt-4 font-mono text-[10px] uppercase tracking-widest text-foreground-tertiary">
+          Loading galaxy
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const clusterIcons: Record<string, typeof IconCode> = {
   programming: IconCode,
@@ -83,6 +135,7 @@ export function SkillsGalaxyPage() {
   const [showLearningPaths, setShowLearningPaths] = useState(false);
   const [activeLearningPath, setActiveLearningPath] = useState<string | null>(null);
   const recruiterMode = useUIStore((s) => s.recruiterMode);
+  const sceneReady = useDeferredMount();
 
   const toggleCluster = useCallback((clusterId: string) => {
     setActiveClusters((prev) =>
@@ -329,14 +382,18 @@ export function SkillsGalaxyPage() {
               "bg-gradient-to-b from-black/40 to-transparent border-white/5"
             )}
           >
-            <SkillsGalaxyThree
-              selectedSkill={selectedSkill}
-              hoveredSkill={hoveredSkill}
-              searchQuery={searchQuery}
-              activeClusters={activeClusters}
-              onSelectSkill={handleSelectSkill}
-              onHoverSkill={setHoveredSkill}
-            />
+            {sceneReady ? (
+              <SkillsGalaxyThree
+                selectedSkill={selectedSkill}
+                hoveredSkill={hoveredSkill}
+                searchQuery={searchQuery}
+                activeClusters={activeClusters}
+                onSelectSkill={handleSelectSkill}
+                onHoverSkill={setHoveredSkill}
+              />
+            ) : (
+              <GalaxyFallback />
+            )}
           </motion.div>
 
           {searchQuery && filteredSkills.length > 0 && (

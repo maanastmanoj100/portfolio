@@ -1,108 +1,157 @@
-"use client";
+import Link from "next/link";
+import { IconArrowUpRight, IconBrandGithub, IconMail } from "@tabler/icons-react";
+import { certifications, profile, skillGroups, timeline } from "@/data/portfolio";
 
-import { motion } from "framer-motion";
-import { PageTransition } from "@/components/layout/page-transition";
-import { GlassCard } from "@/components/ui/glass-card";
-import { Badge } from "@/components/ui/badge";
-import { IconShieldCheck, IconTarget, IconEye, IconLock } from "@tabler/icons-react";
+function formatMonth(date: string) {
+  const [year, month] = date.split("-").map(Number);
+  return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}
 
-const stats = [
-  { label: "Years Experience", value: "6+" },
-  { label: "Projects Completed", value: "50+" },
-  { label: "Certifications", value: "12+" },
-  { label: "CVEs Discovered", value: "15+" },
-];
-
-const values = [
-  { icon: IconShieldCheck, title: "Integrity", description: "Ethical security practices with transparent reporting and responsible disclosure." },
-  { icon: IconTarget, title: "Precision", description: "Meticulous attention to detail in every engagement, leaving no stone unturned." },
-  { icon: IconEye, title: "Vigilance", description: "Constant awareness of emerging threats and evolving attack vectors." },
-  { icon: IconLock, title: "Excellence", description: "Committed to the highest standards in security research and implementation." },
-];
-
+/**
+ * About page — server-rendered with verified facts only. No "years of
+ * experience", project counts, CVE counts or clearance claims: none of those
+ * could be substantiated, so they are not shown.
+ */
 export function AboutPage() {
   return (
-    <PageTransition>
-      <div className="min-h-screen pt-20 pb-20">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="mb-12"
-          >
-            <span className="text-xs text-cyan font-mono tracking-wider uppercase">.about</span>
-            <h1 className="text-4xl sm:text-5xl font-light text-soft-white mt-2">
-              About <span className="text-gradient font-medium">Cyber Nexus</span>
-            </h1>
-          </motion.div>
+    <div className="mx-auto max-w-3xl px-4 py-14 sm:px-6 sm:py-20">
+      <header>
+        <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+          About
+        </h1>
+        <p className="mt-4 text-base leading-relaxed text-foreground-secondary">
+          I&apos;m {profile.name}, a {profile.role.toLowerCase()}. I build
+          security-focused software end to end — APIs and data models on the
+          backend, interfaces on the front, and the details in between that make
+          a topic click.
+        </p>
+      </header>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            <div className="lg:col-span-2">
-              <GlassCard className="p-8" glow="cyan" intensity="medium">
-                <p className="text-soft-white/70 leading-relaxed mb-4">
-                  Cyber Nexus is a cybersecurity portfolio built by a seasoned security professional 
-                  with over 6 years of experience in offensive and defensive security operations. 
-                  The mission is to demonstrate expertise, share knowledge, and connect with 
-                  organizations that value robust security practices.
-                </p>
-                <p className="text-soft-white/70 leading-relaxed mb-6">
-                  From penetration testing Fortune 500 companies to architecting zero-trust 
-                  networks, every project represents a commitment to excellence in cybersecurity. 
-                  This platform showcases real-world security work, research, and tools built 
-                  to solve complex security challenges.
-                </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {stats.map((stat) => (
-                    <div key={stat.label} className="text-center p-3 rounded-xl bg-white/5 border border-white/5">
-                      <div className="text-2xl font-bold text-gradient">{stat.value}</div>
-                      <div className="text-xs text-soft-white/40 font-mono mt-1">{stat.label}</div>
-                    </div>
-                  ))}
-                </div>
-              </GlassCard>
-            </div>
-            <div>
-              <GlassCard className="p-6" glow="purple" intensity="medium">
-                <h3 className="text-sm font-semibold text-soft-white mb-3">Quick Info</h3>
-                <div className="space-y-3 text-sm">
-                  <div><span className="text-soft-white/40">Role:</span> <span className="text-soft-white/80">Security Engineer</span></div>
-                  <div><span className="text-soft-white/40">Location:</span> <span className="text-soft-white/80">Remote · Worldwide</span></div>
-                  <div><span className="text-soft-white/40">Timezone:</span> <span className="text-soft-white/80">EST (UTC-5)</span></div>
-                  <div><span className="text-soft-white/40">Availability:</span> <Badge variant="success" dot pulse>Open to Work</Badge></div>
-                  <div><span className="text-soft-white/40">Languages:</span> <span className="text-soft-white/80">English, Spanish</span></div>
-                  <div><span className="text-soft-white/40">Clearance:</span> <span className="text-soft-white/80">Secret (Active)</span></div>
-                </div>
-              </GlassCard>
-            </div>
-          </div>
+      <section className="mt-12">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+          What I work on
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-foreground-secondary">
+          Recent projects include a SOC dashboard simulator (FastAPI, React,
+          SQLite and Docker), two browser escape rooms, and a CTF murder-mystery
+          event with a mock backend for flag validation. Alongside those I keep
+          smaller tools public — a password-strength analyser, a Caesar cipher, a
+          cryptography playground.
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-foreground-secondary">
+          The through-line is making security concepts concrete: why a password
+          is weak, how a phishing email gives itself away, what an analyst
+          actually does with an alert. If a concept is hard to explain, turning
+          it into a calculator, a puzzle or a game is usually the fastest way to
+          make it stick.
+        </p>
+      </section>
 
-          <div>
-            <h2 className="text-2xl font-light text-soft-white mb-6">
-              Core <span className="text-gradient">Values</span>
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {values.map((v, i) => {
-                const Icon = v.icon;
-                return (
-                  <motion.div
-                    key={v.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1, duration: 0.5 }}
-                  >
-                    <GlassCard className="p-5 h-full" glow="blue" intensity="low">
-                      <Icon size={24} className="text-cyan mb-3" />
-                      <h3 className="text-sm font-semibold text-soft-white mb-1">{v.title}</h3>
-                      <p className="text-xs text-soft-white/50 leading-relaxed">{v.description}</p>
-                    </GlassCard>
-                  </motion.div>
-                );
-              })}
+      <section className="mt-12">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+          Skills
+        </h2>
+        <div className="mt-4 grid gap-6 sm:grid-cols-3">
+          {skillGroups.map((group) => (
+            <div key={group.label}>
+              <h3 className="text-sm font-medium text-foreground">{group.label}</h3>
+              <ul className="mt-2 space-y-1">
+                {group.items.map((item) => (
+                  <li key={item} className="text-sm text-foreground-secondary">
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
+          ))}
         </div>
-      </div>
-    </PageTransition>
+      </section>
+
+      {/* Rendered only once real certifications are added to data/portfolio.ts. */}
+      {certifications.length > 0 && (
+        <section className="mt-12">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+            Certifications
+          </h2>
+          <ul className="mt-3 space-y-2">
+            {certifications.map((cert) => (
+              <li key={cert.name} className="text-sm text-foreground-secondary">
+                <span className="text-foreground">{cert.name}</span> — {cert.issuer},{" "}
+                {cert.date}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="mt-12">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+          Timeline
+        </h2>
+        <ol className="mt-4 space-y-5 border-l border-border pl-5">
+          {timeline.map((entry, index) => (
+            <li key={`${entry.date}-${entry.title}-${index}`} className="relative">
+              <span
+                className="absolute -left-[1.4rem] top-1.5 h-1.5 w-1.5 rounded-full bg-accent"
+                aria-hidden="true"
+              />
+              <div className="text-xs text-foreground-tertiary">
+                {formatMonth(entry.date)}
+              </div>
+              <div className="mt-0.5 text-sm font-medium text-foreground">
+                {entry.title}
+              </div>
+              <p className="mt-1 text-sm leading-relaxed text-foreground-secondary">
+                {entry.detail}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-xs font-medium uppercase tracking-wider text-foreground-tertiary">
+          Get in touch
+        </h2>
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-sm">
+          <a
+            href={`mailto:${profile.email}`}
+            className="inline-flex items-center gap-1.5 text-accent hover:underline"
+          >
+            <IconMail size={15} />
+            {profile.email}
+          </a>
+          <a
+            href={profile.github}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-foreground-secondary transition-colors hover:text-foreground"
+          >
+            <IconBrandGithub size={15} />
+            GitHub
+          </a>
+          {profile.resumeUrl && (
+            <a
+              href={profile.resumeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-foreground-secondary transition-colors hover:text-foreground"
+            >
+              Resume
+              <IconArrowUpRight size={13} />
+            </a>
+          )}
+        </div>
+        <p className="mt-6 text-sm">
+          <Link href="/projects" className="text-accent hover:underline">
+            See the projects
+          </Link>
+        </p>
+      </section>
+    </div>
   );
 }

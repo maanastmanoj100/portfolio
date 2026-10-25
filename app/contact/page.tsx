@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ContactPage } from "@/components/contact/contact-page";
 
 export const metadata: Metadata = {
-  title: "Contact | Cyber Nexus",
-  description: "Get in touch for security consulting opportunities.",
+  title: "Contact",
+  description: "Get in touch by email or GitHub.",
 };
 
 export default function Contact() {
